@@ -407,6 +407,7 @@ const POSTPAID_PLANS = [
 
 // WiFi plans (base price before GST)
 const WIFI_PLANS = [
+  { id: 'wifi_499',  base: 499,  speedLabel: '40 Mbps' },
   { id: 'wifi_599',  base: 599,  speedLabel: '30 Mbps'  },
   { id: 'wifi_899',  base: 899,  speedLabel: '100 Mbps' },
   { id: 'wifi_1199', base: 1199, speedLabel: '100 Mbps premium' },
@@ -430,6 +431,7 @@ const OTT = {
 
 // Per-plan OTT inclusions (id => duration label)
 const WIFI_OTT = {
+  wifi_499:  { adobe: '12M', google_one: '6M' },
   wifi_599:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
   wifi_899:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
   wifi_1199: { netflix_basic: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
@@ -493,6 +495,7 @@ const T = {
 
     print: 'Print for customer',
     reset: 'Reset',
+    screenshot_hint: 'Or just take a screenshot of this page — works the same.',
     lifetime: 'For lifetime',
     suffix_m: ' months',
     free: 'FREE',
@@ -572,6 +575,7 @@ const T = {
 
     print: 'Customer के लिए Print करें',
     reset: 'Reset',
+    screenshot_hint: 'या इस page का screenshot ले लीजिए — दोनों बराबर हैं।',
     lifetime: 'हमेशा के लिए',
     suffix_m: ' महीने',
     free: 'FREE',
@@ -1098,6 +1102,7 @@ function App() {
             ↻ {t('reset')}
           </button>
         </div>
+        <p className="text-[12px] text-warmgray italic mt-3 no-print">{t('screenshot_hint')}</p>
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
