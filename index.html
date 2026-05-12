@@ -472,6 +472,9 @@ const T = {
     today_pays: 'Customer pays today',
     per_month: '/ month',
     per_year: '/ year',
+    gst_toggle: 'Customer knows plan price, not bill? Add 18% GST',
+    gst_toggle_on: 'Amounts include 18% GST',
+    gst_note: 'incl. GST',
 
     step2_title: 'Suggest a One Airtel plan',
     step2_hint: 'Pick a postpaid family plan and a Wi-Fi plan. We add 18% GST and take ₹100 off.',
@@ -569,6 +572,9 @@ const T = {
     today_pays: 'अभी देते हैं',
     per_month: '/ महीना',
     per_year: '/ साल',
+    gst_toggle: 'Customer को plan price पता है, bill नहीं? 18% GST जोड़ें',
+    gst_toggle_on: 'Amounts में 18% GST जोड़ा गया है',
+    gst_note: 'GST सहित',
 
     step2_title: 'One Airtel का plan suggest कीजिए',
     step2_hint: 'एक postpaid family plan और एक Wi-Fi plan चुनिए। 18% GST जुड़ता है, ₹100 छूट मिलती है।',
@@ -712,19 +718,19 @@ function App() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // STEP 1 inputs — current bills
+  // STEP 1 inputs — current bills (gst: per-row GST toggle)
   const [bills, setBills] = useState(() => {
     try {
       const saved = localStorage.getItem('oap_bills_v3');
       if (saved) return JSON.parse(saved);
     } catch {}
     return {
-      mobileAirtel:   { count: '', perMonth: '' },
-      mobileOthers:   { count: '', perMonth: '' },
-      wifiAirtel:     { count: '', perMonth: '' },
-      wifiOthers:     { count: '', perMonth: '' },
-      tvAirtel:       { count: '', perMonth: '' },
-      tvOthers:       { count: '', perMonth: '' },
+      mobileAirtel:   { count: '', perMonth: '', gst: false },
+      mobileOthers:   { count: '', perMonth: '', gst: false },
+      wifiAirtel:     { count: '', perMonth: '', gst: false },
+      wifiOthers:     { count: '', perMonth: '', gst: false },
+      tvAirtel:       { count: '', perMonth: '', gst: false },
+      tvOthers:       { count: '', perMonth: '', gst: false },
       entertainment:  '',
     };
   });
@@ -740,6 +746,11 @@ function App() {
     }
   };
 
+  // Toggle GST for a single row
+  const toggleRowGst = (key) => {
+    setBills({ ...bills, [key]: { ...bills[key], gst: !bills[key].gst } });
+  };
+
   // STEP 2 — suggested plan
   const [ppId, setPpId] = useState('pp_699');
   const [wifiId, setWifiId] = useState('wifi_599');
@@ -753,12 +764,19 @@ function App() {
   // Reset OTT toggles when plans change (different bundle = different OTTs included)
   useEffect(() => { setOttDisabled({}); }, [ppId, wifiId]);
 
-  // Compute current bill totals
-  const rowTotal = (row) => parseNum(row.count) * parseNum(row.perMonth);
+  // Compute current bill totals — each row uses its own GST flag
+  const rowTotal = (row) => {
+    const base = parseNum(row.count) * parseNum(row.perMonth);
+    return row.gst ? base * GST : base;
+  };
   const currentMonthly = useMemo(() => {
-    return rowTotal(bills.mobileAirtel) + rowTotal(bills.mobileOthers)
-         + rowTotal(bills.wifiAirtel)   + rowTotal(bills.wifiOthers)
-         + rowTotal(bills.tvAirtel)     + rowTotal(bills.tvOthers)
+    const rt = (row) => {
+      const base = parseNum(row.count) * parseNum(row.perMonth);
+      return row.gst ? base * GST : base;
+    };
+    return rt(bills.mobileAirtel) + rt(bills.mobileOthers)
+         + rt(bills.wifiAirtel)   + rt(bills.wifiOthers)
+         + rt(bills.tvAirtel)     + rt(bills.tvOthers)
          + parseNum(bills.entertainment);
   }, [bills]);
 
@@ -792,12 +810,12 @@ function App() {
 
   const reset = () => {
     setBills({
-      mobileAirtel:   { count: '', perMonth: '' },
-      mobileOthers:   { count: '', perMonth: '' },
-      wifiAirtel:     { count: '', perMonth: '' },
-      wifiOthers:     { count: '', perMonth: '' },
-      tvAirtel:       { count: '', perMonth: '' },
-      tvOthers:       { count: '', perMonth: '' },
+      mobileAirtel:   { count: '', perMonth: '', gst: false },
+      mobileOthers:   { count: '', perMonth: '', gst: false },
+      wifiAirtel:     { count: '', perMonth: '', gst: false },
+      wifiOthers:     { count: '', perMonth: '', gst: false },
+      tvAirtel:       { count: '', perMonth: '', gst: false },
+      tvOthers:       { count: '', perMonth: '', gst: false },
       entertainment:  '',
     });
     setSubmitted(false);
@@ -936,22 +954,28 @@ function App() {
             label={t('cat_mobile')}
             airtelRow={bills.mobileAirtel}
             othersRow={bills.mobileOthers}
+            airtelKey="mobileAirtel" othersKey="mobileOthers"
             sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
             onUpdate={(side, field, v) => updateBill(side === 'a' ? 'mobileAirtel' : 'mobileOthers', field, v)}
+            onToggleGst={toggleRowGst}
           />
           <ConnRow
             label={t('cat_wifi')}
             airtelRow={bills.wifiAirtel}
             othersRow={bills.wifiOthers}
+            airtelKey="wifiAirtel" othersKey="wifiOthers"
             sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
             onUpdate={(side, field, v) => updateBill(side === 'a' ? 'wifiAirtel' : 'wifiOthers', field, v)}
+            onToggleGst={toggleRowGst}
           />
           <ConnRow
             label={t('cat_tv')}
             airtelRow={bills.tvAirtel}
             othersRow={bills.tvOthers}
+            airtelKey="tvAirtel" othersKey="tvOthers"
             sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
             onUpdate={(side, field, v) => updateBill(side === 'a' ? 'tvAirtel' : 'tvOthers', field, v)}
+            onToggleGst={toggleRowGst}
           />
           {/* Entertainment — single field */}
           <div className="conn-row">
@@ -1311,21 +1335,24 @@ function App() {
    CONNECTION ROW (one for Mobile, WiFi, TV — has Airtel + Others)
    ============================================================ */
 
-function ConnRow({ label, airtelRow, othersRow, sideAirtel, sideOthers, onUpdate }) {
-  const rowTotal = r => (parseFloat(r.count) || 0) * (parseFloat(r.perMonth) || 0);
+function ConnRow({ label, airtelRow, othersRow, sideAirtel, sideOthers, onUpdate, onToggleGst, airtelKey, othersKey }) {
   return (
     <div className="conn-row">
       <div className="conn-cat">{label}</div>
       <div className="conn-sides">
-        <SubRow side="a" sideLabel={sideAirtel} row={airtelRow} onUpdate={onUpdate} accent="airtel"/>
-        <SubRow side="o" sideLabel={sideOthers} row={othersRow} onUpdate={onUpdate}/>
+        <SubRow side="a" sideLabel={sideAirtel} row={airtelRow} onUpdate={onUpdate} accent="airtel"
+          onToggleGst={() => onToggleGst(airtelKey)} />
+        <SubRow side="o" sideLabel={sideOthers} row={othersRow} onUpdate={onUpdate}
+          onToggleGst={() => onToggleGst(othersKey)} />
       </div>
     </div>
   );
 }
 
-function SubRow({ side, sideLabel, row, onUpdate, accent }) {
-  const total = (parseFloat(row.count) || 0) * (parseFloat(row.perMonth) || 0);
+function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
+  const base = (parseFloat(row.count) || 0) * (parseFloat(row.perMonth) || 0);
+  const total = row.gst ? base * 1.18 : base;
+  const hasValues = base > 0;
   return (
     <div className="conn-subrow">
       <div className={`label-side ${accent === 'airtel' ? 'text-airtelDeep' : ''}`}>{sideLabel}</div>
@@ -1343,8 +1370,34 @@ function SubRow({ side, sideLabel, row, onUpdate, accent }) {
         value={row.perMonth}
         onChange={e => onUpdate(side, 'perMonth', e.target.value)}
       />
-      <div className={`total-cell ${total === 0 ? 'zero' : ''}`}>
-        {total > 0 ? fmt(total) : '—'}
+      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'3px'}}>
+        <div className={`total-cell ${total === 0 ? 'zero' : ''}`}>
+          {total > 0 ? fmt(total) : '—'}
+        </div>
+        {hasValues && (
+          <button
+            type="button"
+            onClick={onToggleGst}
+            title={row.gst ? 'Remove GST' : 'Add 18% GST'}
+            style={{
+              fontSize:'9px',
+              fontFamily:'ui-monospace,monospace',
+              fontWeight:700,
+              letterSpacing:'0.06em',
+              textTransform:'uppercase',
+              padding:'1px 5px',
+              borderRadius:'3px',
+              border: row.gst ? '1px solid #BB0E1F' : '1px solid rgba(26,23,20,0.2)',
+              background: row.gst ? '#BB0E1F' : 'transparent',
+              color: row.gst ? '#FAF6EE' : '#6B5F52',
+              cursor:'pointer',
+              transition:'all 0.15s ease',
+              whiteSpace:'nowrap',
+            }}
+          >
+            {row.gst ? '+GST ✓' : '+GST'}
+          </button>
+        )}
       </div>
     </div>
   );
