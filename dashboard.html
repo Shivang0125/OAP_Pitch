@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<title>XFE Fleet Tracker</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #0a0a0a;
+  color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+button, input, select { font: inherit; color: inherit; }
+button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+#app { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+/* ========= HEADER ========= */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header-left h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-left h1 .live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FF4D4D;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.header-left .sub {
+  font-size: 13px;
+  color: #888;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.live-pill {
+  background: rgba(74,222,128,0.12);
+  border: 1px solid rgba(74,222,128,0.3);
+  color: #4ADE80;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.live-pill.error {
+  background: rgba(248,113,113,0.12);
+  border-color: rgba(248,113,113,0.3);
+  color: #F87171;
+}
+
+/* ========= FILTERS ========= */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.filter-group .label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  font-weight: 600;
+}
+.filter-select {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #f5f5f5;
+  padding: 8px 32px 8px 12px;
+  border-radius: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 160px;
+  cursor: pointer;
+}
+.filter-select:focus { outline: none; border-color: #555; }
+.refresh-btn {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #f5f5f5;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-end;
+  transition: background 0.15s;
+}
+.refresh-btn:hover { background: #222; }
+.refresh-btn .arrow {
+  display: inline-block;
+  font-size: 14px;
+}
+@keyframes spin-arrow {
+  to { transform: rotate(360deg); }
+}
+.refresh-btn.spinning .arrow {
+  animation: spin-arrow 0.8s linear infinite;
+}
+
+/* ========= KPI CARDS ========= */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+@media (max-width: 720px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.kpi-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 18px;
+}
+.kpi-card .label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.kpi-card .value {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card .value .small {
+  font-size: 18px;
+  color: #555;
+  font-weight: 500;
+}
+.kpi-card .sub {
+  font-size: 12px;
+  color: #888;
+  margin-top: 6px;
+}
+.kpi-card .sub.up { color: #4ADE80; }
+.kpi-card .sub.down { color: #F87171; }
+
+/* ========= MAIN GRID ========= */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+.card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 18px;
+}
+.card-title {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+  font-weight: 700;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
+.side-col { display: flex; flex-direction: column; gap: 16px; }
+.flags-list {
+  max-height: 600px;
+  overflow-y: auto;
+  margin-right: -8px;
+  padding-right: 8px;
+}
+.flags-list::-webkit-scrollbar { width: 6px; }
+.flags-list::-webkit-scrollbar-track { background: transparent; }
+.flags-list::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.flags-list::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* ========= LEADERBOARD ========= */
+.lb-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+.lb-row:last-child { border-bottom: 0; }
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2a4a8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.avatar.idle { background: #4a1a1a; color: #F87171; }
+.lb-info { min-width: 0; }
+.lb-name { font-weight: 600; font-size: 14px; }
+.lb-meta {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.lb-tag {
+  background: #2a2a2a;
+  color: #aaa;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.lb-tag.idle { background: rgba(248,113,113,0.15); color: #F87171; }
+.lb-tag.top { background: rgba(74,222,128,0.15); color: #4ADE80; }
+.lb-count {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.lb-count-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.lb-pitchcount {
+  text-align: right;
+  min-width: 60px;
+}
+.lb-lasttime {
+  font-size: 11px;
+  color: #666;
+  text-align: right;
+  min-width: 70px;
+}
+
+/* ========= PLANS BAR ========= */
+.plan-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.plan-row .plan-name {
+  color: #f5f5f5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.plan-row .plan-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #FF4D4D;
+}
+.plan-bar {
+  height: 4px;
+  background: #2a2a2a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+  grid-column: 1 / -1;
+}
+.plan-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF4D4D, #BB0E1F);
+  border-radius: 2px;
+}
+
+/* ========= FLAGS ========= */
+.flag-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #2a2a2a;
+  font-size: 13px;
+  gap: 10px;
+}
+.flag-row:last-child { border-bottom: 0; }
+.flag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F87171;
+  flex-shrink: 0;
+}
+.flag-dot.warning { background: #FBBF24; }
+.flag-info { flex: 1; min-width: 0; }
+.flag-name { font-weight: 600; }
+.flag-detail { font-size: 11px; color: #888; margin-top: 2px; }
+.flag-action {
+  font-size: 11px;
+  color: #F87171;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+/* ========= ACTIVITY FEED ========= */
+.activity-row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #2a2a2a;
+  align-items: center;
+}
+.activity-row:last-child { border-bottom: 0; }
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ADE80;
+}
+.activity-text { font-size: 13px; }
+.activity-name { font-weight: 600; }
+.activity-detail { color: #888; }
+.activity-time {
+  font-size: 11px;
+  color: #666;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========= LOADING / EMPTY ========= */
+.empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: #555;
+  font-style: italic;
+  font-size: 13px;
+}
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,10,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100;
+}
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #2a2a2a;
+  border-top-color: #FF4D4D;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  #app { padding: 16px; }
+  .header-left h1 { font-size: 20px; }
+  .kpi-card .value { font-size: 28px; }
+  .lb-row { grid-template-columns: 36px 1fr auto; }
+  .lb-lasttime { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div style="color:#888; font-size:13px;">Loading fleet data…</div>
+</div>
+
+<div id="app" style="display:none">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <h1>
+        <span class="live-dot"></span>
+        XFE Fleet Tracker
+      </h1>
+      <div class="sub" id="header-sub">—</div>
+    </div>
+    <div class="header-right">
+      <span class="live-pill" id="status-pill">Live</span>
+    </div>
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <div class="filter-group">
+      <span class="label">View ZSM</span>
+      <select class="filter-select" id="zsm-filter">
+        <option value="all">All ZSMs</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="label">Filter TSM</span>
+      <select class="filter-select" id="tsm-filter">
+        <option value="all">All TSMs</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="label">Date range</span>
+      <select class="filter-select" id="range-filter">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="week">Last 7 days</option>
+        <option value="month">This month</option>
+        <option value="all">All time</option>
+      </select>
+    </div>
+    <button class="refresh-btn" id="refresh-btn">
+      <span class="arrow">↻</span>
+      <span>Refresh</span>
+    </button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="label">XFEs pitching</div>
+      <div class="value tabular"><span id="kpi-active">0</span><span class="small" id="kpi-total">/0</span></div>
+      <div class="sub" id="kpi-active-sub">in range</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Pitches logged</div>
+      <div class="value tabular" id="kpi-pitches">0</div>
+      <div class="sub" id="kpi-pitches-sub">in range</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Adoption (all-time)</div>
+      <div class="value tabular"><span id="kpi-adopted">0</span><span class="small" id="kpi-adopted-total">/0</span></div>
+      <div class="sub" id="kpi-adopted-sub">XFEs ever pitched</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Pitches today</div>
+      <div class="value tabular" id="kpi-today">0</div>
+      <div class="sub" id="kpi-today-sub">across whole fleet</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID: LEADERBOARD + SIDE -->
+  <div class="main-grid">
+    <section class="card">
+      <div class="card-title">XFE Leaderboard <span style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0">— sorted by pitches in range</span></div>
+      <div id="leaderboard"></div>
+    </section>
+
+    <div class="side-col">
+      <section class="card">
+        <div class="card-title">Most pitched plans</div>
+        <div id="plans"></div>
+      </section>
+
+      <section class="card flags-card">
+        <div class="card-title">Flags <span id="flags-count" style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0"></span></div>
+        <div id="flags" class="flags-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <footer style="text-align:center; color:#444; font-size:11px; padding: 24px 0 8px; font-family: ui-monospace, monospace; letter-spacing:0.06em; text-transform:uppercase">
+    Auto-refreshes every 30 seconds · <span id="last-updated">—</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbzZkGTyqMThsvs1CtK_F90l3nuOtht7ed0hqgcNQVKRmsNX5ETNUa2Xa5ozDFUklChp/exec';
+const POLL_INTERVAL = 30000;
+
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalizePhone = p => String(p || '').replace(/\D/g, '').slice(-10);
+const initials = name => {
+  const parts = String(name || '').trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return '??';
+  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+};
+
+function sanityCheck(d) {
+  if (!d || isNaN(d.getTime())) return null;
+  const now = new Date();
+  if (d.getTime() > now.getTime() + 86400000) return null;
+  if (d.getFullYear() < now.getFullYear() - 10) return null;
+  return d;
+}
+
+function parseTimestamp(val) {
+  if (val == null || val === '') return null;
+  if (val instanceof Date) return sanityCheck(val);
+
+  // Numeric (Unix ms or Sheets serial)
+  if (typeof val === 'number') {
+    if (val > 1e10) return sanityCheck(new Date(val)); // Unix ms
+    if (val > 1000 && val < 100000) {
+      return sanityCheck(new Date((val - 25569) * 86400000)); // Sheets serial
+    }
+    return null;
+  }
+
+  const s = String(val).trim();
+  if (!s) return null;
+
+  // ISO 8601 (e.g. "2026-05-12T10:00:20.000Z")
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return sanityCheck(d);
+  }
+
+  // M/D/YYYY format with optional seconds + optional AM/PM
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(AM|PM|am|pm)?$/);
+  if (m) {
+    const a = +m[1], b = +m[2], y = +m[3];
+    let h = +m[4];
+    const min = +m[5];
+    const sec = +(m[6] || 0);
+    if (m[7]) {
+      const isPM = /pm/i.test(m[7]);
+      if (h === 12) h = isPM ? 12 : 0;
+      else if (isPM) h += 12;
+    }
+
+    let day, month;
+    if (a > 12) { day = a; month = b; }
+    else if (b > 12) { day = b; month = a; }
+    else {
+      // Both ≤ 12, ambiguous. Try both, pick the one in the past.
+      const d1 = new Date(y, b - 1, a, h, min, sec);
+      const d2 = new Date(y, a - 1, b, h, min, sec);
+      const now = new Date();
+      const tolerance = 86400000;
+      const ok1 = d1.getTime() <= now.getTime() + tolerance;
+      const ok2 = d2.getTime() <= now.getTime() + tolerance;
+      if (ok1 && !ok2) return sanityCheck(d1);
+      if (ok2 && !ok1) return sanityCheck(d2);
+      if (!ok1 && !ok2) return null;
+      return sanityCheck(Math.abs(now - d1) < Math.abs(now - d2) ? d1 : d2);
+    }
+    return sanityCheck(new Date(y, month - 1, day, h, min, sec));
+  }
+
+  // Last resort: native Date parser
+  const native = new Date(s);
+  if (!isNaN(native.getTime())) {
+    const checked = sanityCheck(native);
+    if (checked) return checked;
+  }
+
+  console.warn('[parseTimestamp] Could not parse:', JSON.stringify(s), 'type:', typeof val);
+  return null;
+}
+
+function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+
+function inRange(d, range) {
+  if (!d) return range === 'all';
+  const now = new Date();
+  const todayStart = startOfDay(now);
+  if (range === 'today') return d >= todayStart;
+  if (range === 'yesterday') {
+    const yStart = new Date(todayStart); yStart.setDate(yStart.getDate() - 1);
+    return d >= yStart && d < todayStart;
+  }
+  if (range === 'week') {
+    const weekStart = new Date(todayStart); weekStart.setDate(weekStart.getDate() - 7);
+    return d >= weekStart;
+  }
+  if (range === 'month') {
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }
+  return true;
+}
+
+function timeAgo(d) {
+  if (!d) return '';
+  const now = new Date();
+  const ms = now - d;
+  if (ms < 0) return ''; // future date — don't display
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+}
+
+function timeOfDay(d) {
+  if (!d) return '—';
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+// ===== STATE =====
+const state = {
+  pitches: [],
+  reps: [],
+  filters: { zsm: 'all', tsm: 'all', range: 'today' },
+  lastFetch: null,
+  error: null,
+};
+
+// ===== FETCH =====
+async function fetchData() {
+  $('#refresh-btn').classList.add('spinning');
+  try {
+    const res = await fetch(ENDPOINT + '?t=' + Date.now()); // bust cache
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    state.pitches = json.pitches || [];
+    state.reps = json.reps || [];
+    state.lastFetch = new Date();
+    state.error = null;
+    $('#status-pill').textContent = 'Live';
+    $('#status-pill').classList.remove('error');
+
+    // Debug: log a sample so we can diagnose parsing issues
+    if (state.pitches.length > 0) {
+      const sample = state.pitches[0];
+      console.log('[DEBUG] First pitch raw:', JSON.stringify(sample));
+      console.log('[DEBUG] timestamp value:', sample.timestamp, '(type:', typeof sample.timestamp, ')');
+      console.log('[DEBUG] parsed timestamp:', parseTimestamp(sample.timestamp));
+      const parseFailures = state.pitches.filter(p => !parseTimestamp(p.timestamp)).length;
+      if (parseFailures > 0) {
+        console.warn(`[DEBUG] ${parseFailures} of ${state.pitches.length} timestamps failed to parse`);
+      }
+    }
+  } catch (e) {
+    console.error('Fetch failed:', e);
+    state.error = e.message;
+    $('#status-pill').textContent = 'Offline';
+    $('#status-pill').classList.add('error');
+  } finally {
+    $('#refresh-btn').classList.remove('spinning');
+    $('#loading').style.display = 'none';
+    $('#app').style.display = 'block';
+    render();
+  }
+}
+
+function getRepByPhone(phone) {
+  const norm = normalizePhone(phone);
+  return state.reps.find(r => normalizePhone(r.mobile) === norm);
+}
+
+// ===== COMPUTE =====
+function compute() {
+  // Enrich pitches with rep info
+  const enriched = state.pitches.map(p => {
+    const rep = getRepByPhone(p.xfePhone);
+    return {
+      ...p,
+      timestamp: parseTimestamp(p.timestamp),
+      rep,
+      tsm: rep ? rep.tsm : 'Unknown',
+      zsm: rep ? rep.zsm : 'Unknown',
+      repName: rep ? rep.name : (p.xfeName || 'Unknown rep'),
+    };
+  });
+
+  // Sort by timestamp desc
+  enriched.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  // Apply ZSM + TSM filter
+  const baseFiltered = enriched.filter(p => {
+    if (state.filters.zsm !== 'all' && p.zsm !== state.filters.zsm) return false;
+    if (state.filters.tsm !== 'all' && p.tsm !== state.filters.tsm) return false;
+    return true;
+  });
+
+  // Apply date range filter
+  const ranged = baseFiltered.filter(p => inRange(p.timestamp, state.filters.range));
+
+  // Relevant reps for current ZSM/TSM filter
+  const relevantReps = state.reps.filter(r => {
+    if (state.filters.zsm !== 'all' && r.zsm !== state.filters.zsm) return false;
+    if (state.filters.tsm !== 'all' && r.tsm !== state.filters.tsm) return false;
+    return true;
+  });
+
+  // Pitches per rep (within range)
+  const pitchesByPhone = {};
+  ranged.forEach(p => {
+    const ph = normalizePhone(p.xfePhone);
+    if (!pitchesByPhone[ph]) pitchesByPhone[ph] = [];
+    pitchesByPhone[ph].push(p);
+  });
+
+  // Leaderboard
+  const leaderboard = relevantReps.map(rep => {
+    const ph = normalizePhone(rep.mobile);
+    const pitches = pitchesByPhone[ph] || [];
+    const allRepPitches = baseFiltered.filter(p => normalizePhone(p.xfePhone) === ph);
+    const lastEver = allRepPitches.length ? allRepPitches[0].timestamp : null;
+    return {
+      ...rep,
+      pitchCount: pitches.length,
+      lastPitch: pitches.length ? pitches[0].timestamp : null,
+      lastEverPitch: lastEver,
+    };
+  }).sort((a, b) => {
+    if (b.pitchCount !== a.pitchCount) return b.pitchCount - a.pitchCount;
+    if (a.lastEverPitch && b.lastEverPitch) return b.lastEverPitch - a.lastEverPitch;
+    if (a.lastEverPitch) return -1;
+    if (b.lastEverPitch) return 1;
+    return 0;
+  });
+
+  // Most pitched plans (postpaid + wifi combo)
+  const planCounts = {};
+  ranged.forEach(p => {
+    const key = `${p.postpaidPlan || '?'} · ${p.wifiPlan || '?'}`;
+    planCounts[key] = (planCounts[key] || 0) + 1;
+  });
+  const topPlans = Object.entries(planCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+  const maxPlan = topPlans[0] ? topPlans[0][1] : 1;
+
+  // Flags — Surface all reps needing attention:
+  // 1. Critical: was active, gone silent 5+ days  → Call now
+  // 2. Urgent: idle 3-4 days                       → Urgent
+  // 3. Warning: idle 2 days                        → Review
+  // 4. Not started: never pitched                  → Onboard
+  const now = new Date();
+  const flags = [];
+  const neverPitchedReps = [];
+  let everPitchedCount = 0;
+  relevantReps.forEach(rep => {
+    const ph = normalizePhone(rep.mobile);
+    const allRepPitches = baseFiltered.filter(p => normalizePhone(p.xfePhone) === ph);
+    if (allRepPitches.length === 0) {
+      neverPitchedReps.push(rep);
+      flags.push({ rep, type: 'never', tierOrder: 4, action: 'Onboard' });
+      return;
+    }
+    everPitchedCount++;
+    const lastPitch = allRepPitches[0].timestamp;
+    if (!lastPitch) return;
+    const daysSince = Math.floor((now - lastPitch) / (1000 * 60 * 60 * 24));
+    if (daysSince >= 5) {
+      flags.push({ rep, type: 'critical', tierOrder: 1, days: daysSince, lastPitch, action: 'Call now' });
+    } else if (daysSince >= 3) {
+      flags.push({ rep, type: 'urgent', tierOrder: 2, days: daysSince, lastPitch, action: 'Urgent' });
+    } else if (daysSince >= 2) {
+      flags.push({ rep, type: 'warning', tierOrder: 3, days: daysSince, lastPitch, action: 'Review' });
+    }
+  });
+  // Sort by tier (critical first, never-pitched last), then by days idle desc within tier
+  flags.sort((a, b) => {
+    if (a.tierOrder !== b.tierOrder) return a.tierOrder - b.tierOrder;
+    return (b.days || 0) - (a.days || 0);
+  });
+
+  // KPI: pitches today (fleet wide, after ZSM/TSM filter)
+  const todayPitches = baseFiltered.filter(p => inRange(p.timestamp, 'today'));
+  const yPitches = baseFiltered.filter(p => inRange(p.timestamp, 'yesterday'));
+
+  const kpis = {
+    xfesActive: Object.keys(pitchesByPhone).length,
+    totalReps: relevantReps.length,
+    totalPitches: ranged.length,
+    avgPitches: Object.keys(pitchesByPhone).length
+      ? (ranged.length / Object.keys(pitchesByPhone).length).toFixed(1)
+      : '0',
+    pitchesToday: todayPitches.length,
+    pitchesYesterday: yPitches.length,
+    adoptedCount: everPitchedCount,
+    neverPitchedCount: neverPitchedReps.length,
+  };
+
+  return { enriched, ranged, leaderboard, topPlans, maxPlan, flags, neverPitchedReps, kpis };
+}
+
+// ===== RENDER =====
+function render() {
+  populateFilters();
+  const c = compute();
+
+  // Header sub
+  const today = new Date();
+  let viewLabel = 'All ZSMs · All TSMs';
+  if (state.filters.zsm !== 'all') viewLabel = state.filters.zsm + ' ZSM';
+  if (state.filters.tsm !== 'all') viewLabel += ' · ' + state.filters.tsm + ' TSM';
+  $('#header-sub').textContent = viewLabel + ' · ' + today.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // KPIs
+  $('#kpi-active').textContent = c.kpis.xfesActive;
+  $('#kpi-total').textContent = '/' + c.kpis.totalReps;
+  $('#kpi-active-sub').textContent = state.filters.range === 'today' ? 'pitched today' : 'in selected range';
+  $('#kpi-pitches').textContent = c.kpis.totalPitches;
+  $('#kpi-pitches-sub').textContent = state.filters.range === 'today' ? 'today' : 'in selected range';
+  $('#kpi-adopted').textContent = c.kpis.adoptedCount;
+  $('#kpi-adopted-total').textContent = '/' + c.kpis.totalReps;
+  const pct = c.kpis.totalReps ? Math.round((c.kpis.adoptedCount / c.kpis.totalReps) * 100) : 0;
+  $('#kpi-adopted-sub').textContent = `${pct}% of fleet · ${c.kpis.neverPitchedCount} not started`;
+  $('#kpi-today').textContent = c.kpis.pitchesToday;
+  const delta = c.kpis.pitchesToday - c.kpis.pitchesYesterday;
+  if (delta > 0) {
+    $('#kpi-today-sub').innerHTML = `<span style="color:#4ADE80">▲ +${delta}</span> vs yesterday`;
+  } else if (delta < 0) {
+    $('#kpi-today-sub').innerHTML = `<span style="color:#F87171">▼ ${delta}</span> vs yesterday`;
+  } else {
+    $('#kpi-today-sub').textContent = 'same as yesterday';
+  }
+
+  // Leaderboard
+  if (c.leaderboard.length === 0) {
+    $('#leaderboard').innerHTML = '<div class="empty">No XFEs match the current filter.</div>';
+  } else {
+    // Determine max pitch count for "TOP" tag (only if max > 0 and not everyone is tied)
+    const maxPitches = Math.max(...c.leaderboard.map(r => r.pitchCount), 0);
+    const tiedAtMax = c.leaderboard.filter(r => r.pitchCount === maxPitches).length;
+    const showTopTag = maxPitches > 0 && tiedAtMax < c.leaderboard.length;
+
+    $('#leaderboard').innerHTML = c.leaderboard.map((rep, i) => {
+      const isIdle = rep.pitchCount === 0;
+      const neverPitched = !rep.lastEverPitch && rep.pitchCount === 0;
+      const isTop = showTopTag && rep.pitchCount === maxPitches;
+      let lastEverLabel = '';
+      if (rep.lastEverPitch) {
+        const tag = timeAgo(rep.lastEverPitch);
+        lastEverLabel = tag ? 'Last pitch ' + tag : '';
+      } else if (rep.pitchCount > 0) {
+        lastEverLabel = 'Time unknown';
+      }
+      let stateTag = '';
+      if (isTop) stateTag = '<span class="lb-tag top">TOP</span>';
+      else if (neverPitched) stateTag = '<span class="lb-tag idle">Not started</span>';
+      else if (isIdle && state.filters.range === 'today') stateTag = '<span class="lb-tag idle">Idle today</span>';
+      return `
+        <div class="lb-row">
+          <span class="avatar ${isIdle ? 'idle' : ''}">${esc(initials(rep.name))}</span>
+          <div class="lb-info">
+            <div class="lb-name">${esc(rep.name || '—')}</div>
+            <div class="lb-meta">
+              <span>${esc(rep.tsm || '—')} TSM</span>
+              ${stateTag}
+            </div>
+          </div>
+          <div class="lb-pitchcount">
+            <div class="lb-count">${rep.pitchCount}</div>
+            <div class="lb-count-label">pitches</div>
+          </div>
+          <div class="lb-lasttime">${esc(lastEverLabel)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Top plans
+  if (c.topPlans.length === 0) {
+    $('#plans').innerHTML = '<div class="empty">No pitches in range yet.</div>';
+  } else {
+    $('#plans').innerHTML = c.topPlans.map(([name, count]) => `
+      <div class="plan-row">
+        <span class="plan-name">${esc(name)}</span>
+        <span class="plan-count">${count}</span>
+        <div class="plan-bar"><div class="plan-bar-fill" style="width: ${(count / c.maxPlan * 100).toFixed(0)}%"></div></div>
+      </div>
+    `).join('');
+  }
+
+  // Flags
+  const flagsCountEl = document.getElementById('flags-count');
+  if (c.flags.length === 0) {
+    if (flagsCountEl) flagsCountEl.textContent = '';
+    $('#flags').innerHTML = '<div class="empty">No flags — everyone\'s active.</div>';
+  } else {
+    if (flagsCountEl) flagsCountEl.textContent = `— ${c.flags.length} total`;
+    $('#flags').innerHTML = c.flags.map(f => {
+      if (f.type === 'never') {
+        return `
+          <div class="flag-row">
+            <span class="flag-dot warning"></span>
+            <div class="flag-info">
+              <div class="flag-name">${esc(f.rep.name)}</div>
+              <div class="flag-detail">${esc(f.rep.tsm)} TSM · Not started yet</div>
+            </div>
+            <span class="flag-action" style="color:#FBBF24">${esc(f.action)}</span>
+          </div>`;
+      }
+      const dotClass = f.type === 'warning' ? 'warning' : '';
+      const lastLabel = timeAgo(f.lastPitch);
+      return `
+        <div class="flag-row">
+          <span class="flag-dot ${dotClass}"></span>
+          <div class="flag-info">
+            <div class="flag-name">${esc(f.rep.name)}</div>
+            <div class="flag-detail">${esc(f.rep.tsm)} TSM · Idle ${f.days} day${f.days > 1 ? 's' : ''}${lastLabel ? ' · Last pitched ' + lastLabel : ''}</div>
+          </div>
+          <span class="flag-action">${esc(f.action)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // Footer
+  $('#last-updated').textContent = state.error
+    ? ('Connection error: ' + state.error)
+    : ('Last fetched ' + (state.lastFetch ? timeAgo(state.lastFetch) : '—'));
+}
+
+// ===== POPULATE FILTERS =====
+function populateFilters() {
+  // Get unique ZSMs and TSMs
+  const zsms = [...new Set(state.reps.map(r => r.zsm).filter(Boolean))].sort();
+  const tsms = [...new Set(state.reps.filter(r => state.filters.zsm === 'all' || r.zsm === state.filters.zsm).map(r => r.tsm).filter(Boolean))].sort();
+
+  const zsmSel = $('#zsm-filter');
+  const tsmSel = $('#tsm-filter');
+
+  // Only repopulate if needed (preserves user selection)
+  if (zsmSel.options.length !== zsms.length + 1) {
+    zsmSel.innerHTML = '<option value="all">All ZSMs</option>' + zsms.map(z => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+    zsmSel.value = state.filters.zsm;
+  }
+  if (tsmSel.options.length !== tsms.length + 1) {
+    tsmSel.innerHTML = '<option value="all">All TSMs</option>' + tsms.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    tsmSel.value = tsms.includes(state.filters.tsm) ? state.filters.tsm : 'all';
+    state.filters.tsm = tsmSel.value;
+  }
+}
+
+// ===== EVENT HANDLERS =====
+$('#zsm-filter').addEventListener('change', e => {
+  state.filters.zsm = e.target.value;
+  state.filters.tsm = 'all'; // reset TSM when ZSM changes
+  $('#tsm-filter').innerHTML = '<option value="all">All TSMs</option>'; // force repopulate
+  render();
+});
+$('#tsm-filter').addEventListener('change', e => { state.filters.tsm = e.target.value; render(); });
+$('#range-filter').addEventListener('change', e => { state.filters.range = e.target.value; render(); });
+$('#refresh-btn').addEventListener('click', fetchData);
+
+// ===== INIT =====
+fetchData();
+setInterval(fetchData, POLL_INTERVAL);
+
+// Re-render time labels every 15s (without re-fetching)
+setInterval(() => { if (state.lastFetch) render(); }, 15000);
+</script>
+
+</body>
+</html>
