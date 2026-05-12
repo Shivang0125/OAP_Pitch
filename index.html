@@ -496,6 +496,23 @@ const T = {
     print: 'Print for customer',
     reset: 'Reset',
     screenshot_hint: 'Or just take a screenshot of this page — works the same.',
+
+    // XFE phone + submission
+    xfe_section_label: 'Your details (customer will see this)',
+    xfe_name_label: 'Your name',
+    xfe_name_placeholder: 'Full name',
+    xfe_label: 'Your phone number',
+    xfe_sublabel: '(customer will see this)',
+    xfe_placeholder: '98xxxxxxxx',
+    xfe_saved: 'Saved',
+    your_rep: 'Your Airtel rep',
+    submit_btn: 'Submit pitch',
+    submitting: 'Submitting...',
+    submitted_msg: 'Submitted! You can now save as PDF or screenshot to share.',
+    save_pdf_btn: 'Save as PDF',
+    please_enter_phone: 'Please enter your phone number first.',
+    please_enter_both: 'Please enter your name and phone number first.',
+    submission_error: 'Could not submit. Check internet and try again, or take a screenshot.',
     lifetime: 'For lifetime',
     suffix_m: ' months',
     free: 'FREE',
@@ -576,6 +593,23 @@ const T = {
     print: 'Customer के लिए Print करें',
     reset: 'Reset',
     screenshot_hint: 'या इस page का screenshot ले लीजिए — दोनों बराबर हैं।',
+
+    // XFE phone + submission
+    xfe_section_label: 'आपकी details (customer को दिखेगी)',
+    xfe_name_label: 'आपका नाम',
+    xfe_name_placeholder: 'पूरा नाम',
+    xfe_label: 'आपका phone number',
+    xfe_sublabel: '(customer को दिखेगा)',
+    xfe_placeholder: '98xxxxxxxx',
+    xfe_saved: 'Save हो गया',
+    your_rep: 'आपके Airtel rep',
+    submit_btn: 'Pitch submit करें',
+    submitting: 'Submit हो रहा है...',
+    submitted_msg: 'Submit हो गया! अब PDF या screenshot ले सकते हैं।',
+    save_pdf_btn: 'PDF Save करें',
+    please_enter_phone: 'पहले अपना phone number डालिए।',
+    please_enter_both: 'पहले अपना नाम और phone number डालिए।',
+    submission_error: 'Submit नहीं हो पाया। Internet check करके फिर try करें, या screenshot लीजिए।',
     lifetime: 'हमेशा के लिए',
     suffix_m: ' महीने',
     free: 'FREE',
@@ -657,6 +691,26 @@ function App() {
     document.body.setAttribute('data-lang', lang);
   }, [lang]);
   const t = key => T[lang][key] || T.en[key] || key;
+
+  // XFE Phone — auto-saved, persists across sessions
+  const [xfePhone, setXfePhone] = useState(() => {
+    try { return localStorage.getItem('oap_xfe_phone') || ''; } catch { return ''; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('oap_xfe_phone', xfePhone); } catch {}
+  }, [xfePhone]);
+
+  // XFE Name — auto-saved, persists across sessions
+  const [xfeName, setXfeName] = useState(() => {
+    try { return localStorage.getItem('oap_xfe_name') || ''; } catch { return ''; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('oap_xfe_name', xfeName); } catch {}
+  }, [xfeName]);
+
+  // Submission state
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // STEP 1 inputs — current bills
   const [bills, setBills] = useState(() => {
@@ -746,6 +800,65 @@ function App() {
       tvOthers:       { count: '', perMonth: '' },
       entertainment:  '',
     });
+    setSubmitted(false);
+  };
+
+  // Build a readable breakdown of customer's current bills
+  const buildBillBreakdown = () => {
+    const parts = [];
+    const row = (label, r) => {
+      const c = parseNum(r.count), p = parseNum(r.perMonth);
+      if (c > 0 && p > 0) parts.push(`${label}: ${c}×₹${p}=₹${c*p}`);
+    };
+    row('Mobile Airtel', bills.mobileAirtel);
+    row('Mobile Others', bills.mobileOthers);
+    row('WiFi Airtel', bills.wifiAirtel);
+    row('WiFi Others', bills.wifiOthers);
+    row('TV Airtel', bills.tvAirtel);
+    row('TV Others', bills.tvOthers);
+    const ent = parseNum(bills.entertainment);
+    if (ent > 0) parts.push(`Entertainment: ₹${ent}`);
+    return parts.length ? parts.join(' | ') + ` | TOTAL ₹${currentMonthly}/mo` : '';
+  };
+
+  // Submit pitch data to Google Sheet
+  const submitToSheet = async () => {
+    const phone = xfePhone.trim();
+    const name = xfeName.trim();
+    if (!phone || !name) {
+      alert(t('please_enter_both'));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const ppPlan = POSTPAID_PLANS.find(p => p.id === ppId);
+      const wifiPlan = WIFI_PLANS.find(w => w.id === wifiId);
+      const payload = {
+        xfeName: name,
+        xfePhone: phone,
+        customerCurrentMonthly: buildBillBreakdown(),
+        postpaidPlan: ppPlan ? `₹${ppPlan.base} ${ppPlan.label} (${ppPlan.sims} SIM${ppPlan.sims>1?'s':''})` : '',
+        wifiPlan: wifiPlan ? `₹${wifiPlan.base} ${wifiPlan.speedLabel}` : '',
+        oapMonthlyBreakdown: oap ? `₹${oap.wifi.base} WiFi + ₹${oap.pp.base} Postpaid = ₹${Math.round((oap.wifi.base+oap.pp.base)*GST)} (with 18% GST) − ₹100 discount = ₹${Math.round(oap.price)}/mo` : '',
+        monthlySavings: Math.round(monthlySavings),
+        yearlySavings: Math.round(yearlySavings),
+        ottValue: Math.round(oapBenefitsValue),
+      };
+
+      // Use no-cors mode since Apps Script returns opaque response from cross-origin
+      await fetch('https://script.google.com/macros/s/AKfycbzZkGTyqMThsvs1CtK_F90l3nuOtht7ed0hqgcNQVKRmsNX5ETNUa2Xa5ozDFUklChp/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Submission failed:', err);
+      alert(t('submission_error'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -769,6 +882,37 @@ function App() {
           </div>
         </div>
       </header>
+
+      {/* XFE NAME + PHONE STRIP — auto-saved, visible to customer in savings stamp */}
+      <div className="bg-cream2 border-b border-ink/10 no-print">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+            <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('xfe_section_label')}</div>
+            {xfeName.trim() && xfePhone.trim() && (
+              <span className="text-[11px] text-sage font-semibold mono">✓ {t('xfe_saved')}</span>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              type="text"
+              placeholder={t('xfe_name_placeholder')}
+              value={xfeName}
+              onChange={e => setXfeName(e.target.value)}
+              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white text-base font-semibold focus:border-airtelDeep focus:outline-none"
+              style={{minHeight:'40px'}}
+            />
+            <input
+              type="tel"
+              inputMode="tel"
+              placeholder={t('xfe_placeholder')}
+              value={xfePhone}
+              onChange={e => setXfePhone(e.target.value)}
+              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white tabular text-base font-semibold focus:border-airtelDeep focus:outline-none"
+              style={{minHeight:'40px'}}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* ============ STEP 1: WHAT THEY PAY TODAY ============ */}
       <section className="max-w-4xl mx-auto px-4 pt-6">
@@ -1026,6 +1170,16 @@ function App() {
                   <div className="text-3xl sm:text-4xl font-bold tabular">{fmt(oapBenefitsValue)}<span className="text-base opacity-80 ml-1">{t('step3_includes_2')}</span></div>
                 </div>
               )}
+              {(xfeName.trim() || xfePhone.trim()) && (
+                <div className="mt-5 pt-4 border-t border-white/20 text-sm">
+                  <div className="opacity-75 text-[11px] uppercase tracking-wider mb-1">{t('your_rep')}</div>
+                  <div className="font-bold text-base tracking-wide">
+                    {xfeName.trim() && <span>{xfeName}</span>}
+                    {xfeName.trim() && xfePhone.trim() && <span className="opacity-60 mx-2">·</span>}
+                    {xfePhone.trim() && <span className="tabular">{xfePhone}</span>}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -1040,6 +1194,16 @@ function App() {
                   <div className="text-[12px] uppercase tracking-wider opacity-70 mb-1">{t('step3_upsell_note')}</div>
                   <div className="text-3xl sm:text-4xl font-bold tabular text-gold">{fmt(oapBenefitsValue)}</div>
                   <div className="text-sm opacity-80 mt-1">{t('step3_upsell_swap')}</div>
+                </div>
+              )}
+              {(xfeName.trim() || xfePhone.trim()) && (
+                <div className="mt-5 pt-4 border-t border-white/15 text-sm">
+                  <div className="opacity-75 text-[11px] uppercase tracking-wider mb-1">{t('your_rep')}</div>
+                  <div className="font-bold text-base tracking-wide text-gold">
+                    {xfeName.trim() && <span>{xfeName}</span>}
+                    {xfeName.trim() && xfePhone.trim() && <span className="opacity-60 mx-2">·</span>}
+                    {xfePhone.trim() && <span className="tabular">{xfePhone}</span>}
+                  </div>
                 </div>
               )}
             </div>
@@ -1088,21 +1252,51 @@ function App() {
         )}
 
         {/* Actions */}
-        <div className="mt-8 flex flex-wrap gap-3 no-print">
-          <button
-            onClick={() => window.print()}
-            className="px-5 py-2.5 bg-ink text-cream rounded-md font-semibold text-sm hover:bg-airtelDeep transition"
-          >
-            📄 {t('print')}
-          </button>
-          <button
-            onClick={reset}
-            className="px-5 py-2.5 border border-ink/20 rounded-md font-semibold text-sm hover:bg-cream2 transition"
-          >
-            ↻ {t('reset')}
-          </button>
-        </div>
-        <p className="text-[12px] text-warmgray italic mt-3 no-print">{t('screenshot_hint')}</p>
+        {!submitted ? (
+          <>
+            <div className="mt-8 flex flex-wrap gap-3 no-print">
+              <button
+                onClick={submitToSheet}
+                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim()}
+                className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {submitting ? (
+                  <>⏳ {t('submitting')}</>
+                ) : (
+                  <>📤 {t('submit_btn')}</>
+                )}
+              </button>
+              <button
+                onClick={reset}
+                className="px-5 py-3 border border-ink/20 rounded-md font-semibold text-sm hover:bg-cream2 transition"
+              >
+                ↻ {t('reset')}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="no-print mt-8 bg-sage/10 border-2 border-sage rounded-lg p-5">
+            <div className="flex items-center gap-2 text-sage font-bold text-base mb-2">
+              <span className="text-2xl">✓</span>
+              <span>{t('submitted_msg')}</span>
+            </div>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <button
+                onClick={() => window.print()}
+                className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition flex items-center gap-2"
+              >
+                📄 {t('save_pdf_btn')}
+              </button>
+              <button
+                onClick={reset}
+                className="px-5 py-3 border border-ink/20 rounded-md font-semibold text-sm hover:bg-cream2 transition"
+              >
+                ↻ {t('reset')}
+              </button>
+            </div>
+            <p className="text-[12px] text-warmgray italic mt-3">{t('screenshot_hint')}</p>
+          </div>
+        )}
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
