@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -34,9 +35,13 @@ window.tailwind.config = {
   }
 }
 </script>
+
 <script src="https://cdn.tailwindcss.com"></script>
+
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
@@ -404,6 +409,7 @@ window.tailwind.config = {
     line-height: 1;
   }
 </style>
+
 </head>
 <body>
 <div id="root"></div>
@@ -487,10 +493,10 @@ const T = {
     header_sub: 'Sales calculator',
 
     step1_title: 'What does the customer pay today?',
-    step1_hint: 'Enter the total monthly spend for each category — not per SIM. Eg. 2 SIMs on a ₹699 family plan: enter 2 and 699.',
+    step1_hint: 'Enter what they currently pay every month, like in the pitchbook.',
     col_count: 'How many',
-    col_amount: 'Total ₹ / month',
-    col_total: 'With GST',
+    col_amount: '₹ each / month',
+    col_total: 'Total / month',
     cat_mobile: 'Mobile',
     cat_wifi: 'Wi-Fi',
     cat_tv: 'TV (DTH / Cable)',
@@ -590,10 +596,10 @@ const T = {
     header_sub: 'Sales calculator',
 
     step1_title: 'Customer अभी क्या pay करते हैं?',
-    step1_hint: 'हर category पर customer का TOTAL monthly खर्चा भरिए — per SIM नहीं। जैसे ₹699 family plan पर 2 SIM हैं तो 2 और 699 भरें।',
+    step1_hint: 'जैसे pitchbook में, अभी का monthly खर्चा यहाँ भर दीजिए।',
     col_count: 'कितने हैं',
-    col_amount: 'कुल ₹ / month',
-    col_total: 'GST सहित',
+    col_amount: 'हर एक का ₹ / month',
+    col_total: 'Total / month',
     cat_mobile: 'Mobile',
     cat_wifi: 'Wi-Fi',
     cat_tv: 'TV (DTH / Cable)',
@@ -754,11 +760,11 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
 
   // STEP 1 inputs — current bills (gst: per-row GST toggle)
-  // NOTE: storage key bumped to v4 because semantics changed — `perMonth` is now the
-  // TOTAL monthly spend for that category (not per-SIM). Old v3 data is intentionally discarded.
+  // NOTE: `perMonth` is the per-SIM (per-connection) cost. Row total = count × perMonth.
+  // Storage key bumped to v5 to discard any test data entered with the brief "totals" semantics.
   const [bills, setBills] = useState(() => {
     try {
-      const saved = localStorage.getItem('oap_bills_v4');
+      const saved = localStorage.getItem('oap_bills_v5');
       if (saved) return JSON.parse(saved);
     } catch {}
     return {
@@ -772,7 +778,7 @@ function App() {
     };
   });
   useEffect(() => {
-    try { localStorage.setItem('oap_bills_v4', JSON.stringify(bills)); } catch {}
+    try { localStorage.setItem('oap_bills_v5', JSON.stringify(bills)); } catch {}
   }, [bills]);
 
   const updateBill = (key, field, value) => {
@@ -801,15 +807,15 @@ function App() {
   // Reset OTT toggles when plans change (different bundle = different OTTs included)
   useEffect(() => { setOttDisabled({}); }, [ppId, wifiId]);
 
-  // Compute current bill totals — `perMonth` is now the TOTAL for that row, not per-SIM.
-  // GST flag, if on, adds 18% to that total.
+  // Compute current bill totals — `perMonth` is the per-SIM (per-connection) cost.
+  // GST flag, if on, adds 18% to that row's total.
   const rowTotal = (row) => {
-    const base = parseNum(row.perMonth);
+    const base = parseNum(row.count) * parseNum(row.perMonth);
     return row.gst ? base * GST : base;
   };
   const currentMonthly = useMemo(() => {
     const rt = (row) => {
-      const base = parseNum(row.perMonth);
+      const base = parseNum(row.count) * parseNum(row.perMonth);
       return row.gst ? base * GST : base;
     };
     return rt(bills.mobileAirtel) + rt(bills.mobileOthers)
@@ -821,7 +827,7 @@ function App() {
   // TV total — used in savings calc; absorbed into OAP when wifi plan includes DTH
   const tvTotal = useMemo(() => {
     const rt = (row) => {
-      const base = parseNum(row.perMonth);
+      const base = parseNum(row.count) * parseNum(row.perMonth);
       return row.gst ? base * GST : base;
     };
     return rt(bills.tvAirtel) + rt(bills.tvOthers);
@@ -877,7 +883,7 @@ function App() {
     const parts = [];
     const row = (label, r) => {
       const c = parseNum(r.count), p = parseNum(r.perMonth);
-      if (p > 0) parts.push(`${label}: ${c} conn × ₹${p} total${r.gst ? ' +GST' : ''}`);
+      if (c > 0 && p > 0) parts.push(`${label}: ${c}×₹${p}${r.gst ? ' +GST' : ''}=₹${Math.round(c*p*(r.gst?GST:1))}`);
     };
     row('Mobile Airtel', bills.mobileAirtel);
     row('Mobile Others', bills.mobileOthers);
@@ -1387,7 +1393,7 @@ function App() {
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-        One Airtel · v4 · totals not per-SIM · DTH-aware · GST inclusive
+        One Airtel · v5 · per-SIM × count · DTH-aware · GST inclusive
       </footer>
 
     </div>
@@ -1413,8 +1419,7 @@ function ConnRow({ label, airtelRow, othersRow, sideAirtel, sideOthers, onUpdate
 }
 
 function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
-  // perMonth is now the TOTAL for this row, not per-SIM. Count is informational only.
-  const base = parseFloat(row.perMonth) || 0;
+  const base = (parseFloat(row.count) || 0) * (parseFloat(row.perMonth) || 0);
   const total = row.gst ? base * 1.18 : base;
   const hasValues = base > 0;
   return (
@@ -1469,5 +1474,6 @@ function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
+
 </body>
 </html>
