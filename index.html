@@ -379,6 +379,30 @@ window.tailwind.config = {
     color: transparent;
   }
   .ott-check.on { background: #1A1714; color: #FAF6EE; }
+
+  /* DTH-included benefit row — always-on, visually distinct */
+  .dth-benefit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(92,124,87,0.08);
+    border: 1px solid #5C7C57;
+    border-radius: 6px;
+  }
+  .dth-check {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    background: #5C7C57;
+    color: #FAF6EE;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+  }
 </style>
 </head>
 <body>
@@ -409,11 +433,15 @@ const POSTPAID_PLANS = [
 const WIFI_PLANS = [
   { id: 'wifi_499',  base: 499,  speedLabel: '40 Mbps' },
   { id: 'wifi_599',  base: 599,  speedLabel: '30 Mbps'  },
+  { id: 'wifi_799',  base: 799,  speedLabel: '100 Mbps' },
   { id: 'wifi_899',  base: 899,  speedLabel: '100 Mbps' },
   { id: 'wifi_1199', base: 1199, speedLabel: '100 Mbps premium' },
   { id: 'wifi_1599', base: 1599, speedLabel: '300 Mbps' },
   { id: 'wifi_3999', base: 3999, speedLabel: '1 Gbps'   },
 ];
+
+// Wi-Fi plans that REPLACE customer's DTH / cable bill (all except 499 and 799)
+const WIFI_INCLUDES_DTH = new Set(['wifi_599', 'wifi_899', 'wifi_1199', 'wifi_1599', 'wifi_3999']);
 
 // OTT catalog (monthly value)
 const OTT = {
@@ -433,6 +461,7 @@ const OTT = {
 const WIFI_OTT = {
   wifi_499:  { adobe: '12M', google_one: '6M' },
   wifi_599:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
+  wifi_799:  { google_one: '6M', adobe: '12M' },
   wifi_899:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
   wifi_1199: { netflix_basic: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
   wifi_1599: { netflix_basic: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
@@ -458,10 +487,10 @@ const T = {
     header_sub: 'Sales calculator',
 
     step1_title: 'What does the customer pay today?',
-    step1_hint: 'Enter what they currently pay every month, like in the pitchbook.',
+    step1_hint: 'Enter the total monthly spend for each category — not per SIM. Eg. 2 SIMs on a ₹699 family plan: enter 2 and 699.',
     col_count: 'How many',
-    col_amount: '₹ each / month',
-    col_total: 'Total / month',
+    col_amount: 'Total ₹ / month',
+    col_total: 'With GST',
     cat_mobile: 'Mobile',
     cat_wifi: 'Wi-Fi',
     cat_tv: 'TV (DTH / Cable)',
@@ -483,6 +512,7 @@ const T = {
     oap_label: 'On One Airtel',
     oap_disc_note: '₹100/month off — both with Airtel',
     select_a_plan: "Enter the customer's current bills above to see savings",
+    wifi_dth_included: 'Includes DTH / Cable TV replacement',
 
     step3_savings: 'Congratulations!',
     step3_save: 'You save',
@@ -490,6 +520,8 @@ const T = {
     step3_includes: 'Plus FREE benefits worth',
     step3_includes_2: 'every month',
     step3_freebies: 'Included free with this plan',
+    dth_replaces_tv: 'DTH / Cable TV (replaces your current TV bill)',
+    dth_included_short: 'Included',
 
     step3_upsell_pre: 'Spend just',
     step3_upsell_post: 'more / month',
@@ -558,10 +590,10 @@ const T = {
     header_sub: 'Sales calculator',
 
     step1_title: 'Customer अभी क्या pay करते हैं?',
-    step1_hint: 'जैसे pitchbook में, अभी का monthly खर्चा यहाँ भर दीजिए।',
+    step1_hint: 'हर category पर customer का TOTAL monthly खर्चा भरिए — per SIM नहीं। जैसे ₹699 family plan पर 2 SIM हैं तो 2 और 699 भरें।',
     col_count: 'कितने हैं',
-    col_amount: 'हर एक का ₹ / month',
-    col_total: 'Total / month',
+    col_amount: 'कुल ₹ / month',
+    col_total: 'GST सहित',
     cat_mobile: 'Mobile',
     cat_wifi: 'Wi-Fi',
     cat_tv: 'TV (DTH / Cable)',
@@ -583,6 +615,7 @@ const T = {
     oap_label: 'One Airtel पर',
     oap_disc_note: '₹100/महीना छूट — दोनों Airtel से लेने पर',
     select_a_plan: 'Customer के current bills ऊपर भरिए, savings दिखेगी',
+    wifi_dth_included: 'DTH / Cable TV का replacement शामिल है',
 
     step3_savings: 'बधाई हो!',
     step3_save: 'बचत',
@@ -590,6 +623,8 @@ const T = {
     step3_includes: 'साथ में FREE सुविधाएं — value',
     step3_includes_2: 'हर महीना',
     step3_freebies: 'इस plan में FREE मिलेगा',
+    dth_replaces_tv: 'DTH / Cable TV (आपका मौजूदा TV bill replace करता है)',
+    dth_included_short: 'शामिल',
 
     step3_upsell_pre: 'बस',
     step3_upsell_post: 'ज़्यादा / महीना',
@@ -681,7 +716,7 @@ function buildOAP(wifiId, postpaidId) {
     .filter(([k]) => OTT[k])
     .map(([k, dur]) => ({ id: k, name: OTT[k].name, value: OTT[k].value, duration: dur }))
     .sort((a, b) => b.value - a.value);
-  return { wifi, pp, price, benefits };
+  return { wifi, pp, price, benefits, includesDTH: WIFI_INCLUDES_DTH.has(wifiId) };
 }
 
 /* ============================================================
@@ -719,9 +754,11 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
 
   // STEP 1 inputs — current bills (gst: per-row GST toggle)
+  // NOTE: storage key bumped to v4 because semantics changed — `perMonth` is now the
+  // TOTAL monthly spend for that category (not per-SIM). Old v3 data is intentionally discarded.
   const [bills, setBills] = useState(() => {
     try {
-      const saved = localStorage.getItem('oap_bills_v3');
+      const saved = localStorage.getItem('oap_bills_v4');
       if (saved) return JSON.parse(saved);
     } catch {}
     return {
@@ -735,7 +772,7 @@ function App() {
     };
   });
   useEffect(() => {
-    try { localStorage.setItem('oap_bills_v3', JSON.stringify(bills)); } catch {}
+    try { localStorage.setItem('oap_bills_v4', JSON.stringify(bills)); } catch {}
   }, [bills]);
 
   const updateBill = (key, field, value) => {
@@ -764,14 +801,15 @@ function App() {
   // Reset OTT toggles when plans change (different bundle = different OTTs included)
   useEffect(() => { setOttDisabled({}); }, [ppId, wifiId]);
 
-  // Compute current bill totals — each row uses its own GST flag
+  // Compute current bill totals — `perMonth` is now the TOTAL for that row, not per-SIM.
+  // GST flag, if on, adds 18% to that total.
   const rowTotal = (row) => {
-    const base = parseNum(row.count) * parseNum(row.perMonth);
+    const base = parseNum(row.perMonth);
     return row.gst ? base * GST : base;
   };
   const currentMonthly = useMemo(() => {
     const rt = (row) => {
-      const base = parseNum(row.count) * parseNum(row.perMonth);
+      const base = parseNum(row.perMonth);
       return row.gst ? base * GST : base;
     };
     return rt(bills.mobileAirtel) + rt(bills.mobileOthers)
@@ -780,8 +818,18 @@ function App() {
          + parseNum(bills.entertainment);
   }, [bills]);
 
+  // TV total — used in savings calc; absorbed into OAP when wifi plan includes DTH
+  const tvTotal = useMemo(() => {
+    const rt = (row) => {
+      const base = parseNum(row.perMonth);
+      return row.gst ? base * GST : base;
+    };
+    return rt(bills.tvAirtel) + rt(bills.tvOthers);
+  }, [bills]);
+
   // OAP bundle
   const oap = useMemo(() => buildOAP(wifiId, ppId), [wifiId, ppId]);
+  const wifiIncludesDTH = !!(oap && oap.includesDTH);
   const fullOttValue    = useMemo(() => oap ? oap.benefits.reduce((s, b) => s + b.value, 0) : 0, [oap]);
   const enabledOttValue = useMemo(() => oap ? oap.benefits.filter(b => !ottDisabled[b.id]).reduce((s, b) => s + b.value, 0) : 0, [oap, ottDisabled]);
   const oapBenefitsValue = enabledOttValue; // what we show in the pitch (after toggles)
@@ -797,11 +845,14 @@ function App() {
     return { ppGST, wifiGST, perSim, wifiEffective, persimVs349: 374 - perSim };
   }, [oap]);
 
-  // Savings calc — for the headline, we compare current total bill vs OAP bundle price
-  // This matches the pitchbook's "Congratulations! You Saved" mental model:
-  // assume customer's mobile+wifi+entertainment becomes the OAP bundle; TV stays separate.
-  // For simplicity (and the rep doing math at the doorstep), just compare the totals.
-  const newMonthly = oap ? oap.price + rowTotal(bills.tvAirtel) + rowTotal(bills.tvOthers) : 0;
+  // Savings calc:
+  // - If the chosen Wi-Fi plan includes DTH, customer's TV bill goes to zero → it's absorbed
+  //   into the bundle, so we drop it from `newMonthly`.
+  // - If the chosen Wi-Fi plan does NOT include DTH (wifi_499, wifi_799), customer still
+  //   pays their TV bill separately on top of the OAP bundle.
+  const newMonthly = oap
+    ? oap.price + (wifiIncludesDTH ? 0 : tvTotal)
+    : 0;
   const monthlySavings = currentMonthly - newMonthly;
   const yearlySavings = monthlySavings * 12;
   const isPositive = monthlySavings >= 0;
@@ -826,7 +877,7 @@ function App() {
     const parts = [];
     const row = (label, r) => {
       const c = parseNum(r.count), p = parseNum(r.perMonth);
-      if (c > 0 && p > 0) parts.push(`${label}: ${c}×₹${p}=₹${c*p}`);
+      if (p > 0) parts.push(`${label}: ${c} conn × ₹${p} total${r.gst ? ' +GST' : ''}`);
     };
     row('Mobile Airtel', bills.mobileAirtel);
     row('Mobile Others', bills.mobileOthers);
@@ -836,7 +887,7 @@ function App() {
     row('TV Others', bills.tvOthers);
     const ent = parseNum(bills.entertainment);
     if (ent > 0) parts.push(`Entertainment: ₹${ent}`);
-    return parts.length ? parts.join(' | ') + ` | TOTAL ₹${currentMonthly}/mo` : '';
+    return parts.length ? parts.join(' | ') + ` | TOTAL ₹${Math.round(currentMonthly)}/mo` : '';
   };
 
   // Submit pitch data to Google Sheet
@@ -856,8 +907,9 @@ function App() {
         xfePhone: phone,
         customerCurrentMonthly: buildBillBreakdown(),
         postpaidPlan: ppPlan ? `₹${ppPlan.base} ${ppPlan.label} (${ppPlan.sims} SIM${ppPlan.sims>1?'s':''})` : '',
-        wifiPlan: wifiPlan ? `₹${wifiPlan.base} ${wifiPlan.speedLabel}` : '',
-        oapMonthlyBreakdown: oap ? `₹${oap.wifi.base} WiFi + ₹${oap.pp.base} Postpaid = ₹${Math.round((oap.wifi.base+oap.pp.base)*GST)} (with 18% GST) − ₹100 discount = ₹${Math.round(oap.price)}/mo` : '',
+        wifiPlan: wifiPlan ? `₹${wifiPlan.base} ${wifiPlan.speedLabel}${wifiIncludesDTH ? ' +DTH' : ''}` : '',
+        dthIncluded: wifiIncludesDTH ? 'Yes' : 'No',
+        oapMonthlyBreakdown: oap ? `₹${oap.wifi.base} WiFi + ₹${oap.pp.base} Postpaid = ₹${Math.round((oap.wifi.base+oap.pp.base)*GST)} (with 18% GST) − ₹100 discount = ₹${Math.round(oap.price)}/mo${wifiIncludesDTH ? ' (DTH included)' : ''}` : '',
         monthlySavings: Math.round(monthlySavings),
         yearlySavings: Math.round(yearlySavings),
         ottValue: Math.round(oapBenefitsValue),
@@ -1049,10 +1101,13 @@ function App() {
             >
               {WIFI_PLANS.map(w => (
                 <option key={w.id} value={w.id}>
-                  ₹{w.base} — {w.speedLabel}
+                  ₹{w.base} — {w.speedLabel}{WIFI_INCLUDES_DTH.has(w.id) ? ' + DTH' : ''}
                 </option>
               ))}
             </select>
+            {wifiIncludesDTH && (
+              <div className="text-[11px] text-sage mt-1.5 font-semibold">✓ {t('wifi_dth_included')}</div>
+            )}
           </div>
         </div>
 
@@ -1234,14 +1289,22 @@ function App() {
           </div>
         )}
 
-        {/* OTT freebies list — toggleable */}
-        {oap && oap.benefits.length > 0 && (
+        {/* Freebies — DTH (if applicable) + OTT list (toggleable) */}
+        {oap && (oap.benefits.length > 0 || wifiIncludesDTH) && (
           <div className="mt-6">
             <div className="flex items-baseline justify-between flex-wrap gap-2 mb-2">
               <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('step3_freebies')}</div>
               <div className="text-[11px] text-warmgray italic no-print">{t('ott_customize_hint')}</div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {wifiIncludesDTH && (
+                <div className="dth-benefit-row">
+                  <span className="dth-check">✓</span>
+                  <span className="font-semibold flex-1">{t('dth_replaces_tv')}</span>
+                  <span className="text-[10px] mono uppercase tracking-wider text-warmgray">{t('lifetime')}</span>
+                  <span className="font-bold tabular text-sm" style={{color:'#5C7C57'}}>{t('dth_included_short')}</span>
+                </div>
+              )}
               {oap.benefits.map(b => {
                 const off = !!ottDisabled[b.id];
                 return (
@@ -1324,7 +1387,7 @@ function App() {
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-        One Airtel · v3 simplified · Prices ₹/month, GST inclusive
+        One Airtel · v4 · totals not per-SIM · DTH-aware · GST inclusive
       </footer>
 
     </div>
@@ -1350,7 +1413,8 @@ function ConnRow({ label, airtelRow, othersRow, sideAirtel, sideOthers, onUpdate
 }
 
 function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
-  const base = (parseFloat(row.count) || 0) * (parseFloat(row.perMonth) || 0);
+  // perMonth is now the TOTAL for this row, not per-SIM. Count is informational only.
+  const base = parseFloat(row.perMonth) || 0;
   const total = row.gst ? base * 1.18 : base;
   const hasValues = base > 0;
   return (
