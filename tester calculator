@@ -1,0 +1,2957 @@
+<!DOCTYPE html>
+
+
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="theme-color" content="#BB0E1F">
+
+<title>One Airtel Calculator</title>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+
+
+<script>
+
+window.tailwind = window.tailwind || {};
+
+window.tailwind.config = {
+
+  theme: {
+
+    extend: {
+
+      colors: {
+
+        cream:    '#FAF6EE',
+
+        cream2:   '#F1ECE2',
+
+        cream3:   '#E8E0D2',
+
+        ink:      '#1A1714',
+
+        warmgray: '#6B5F52',
+
+        airtel:   '#E40523',
+
+        airtelDeep: '#BB0E1F',
+
+        gold:     '#B89968',
+
+        sage:     '#5C7C57',
+
+      },
+
+      fontFamily: {
+
+        sans: ['"Plus Jakarta Sans"','system-ui','sans-serif'],
+
+        mono: ['"JetBrains Mono"','monospace'],
+
+      }
+
+    }
+
+  }
+
+}
+
+</script>
+
+
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+
+
+
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+
+
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+
+
+<style>
+
+  html, body { background: #FAF6EE; color: #1A1714; -webkit-font-smoothing: antialiased; }
+
+  body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Noto Sans Devanagari', sans-serif; }
+
+  body[data-lang="hi"] { font-family: system-ui, -apple-system, 'Noto Sans Devanagari', 'Mangal', 'Plus Jakarta Sans', sans-serif; }
+
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+
+
+  /* The big step-number indicator on the left side */
+
+  .step-num {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 36px; height: 36px;
+
+    background: #BB0E1F;
+
+    color: #FAF6EE;
+
+    border-radius: 999px;
+
+    font-weight: 700;
+
+    font-size: 16px;
+
+  }
+
+
+
+  /* Connection table — like the pitchbook */
+
+  .conn-table {
+
+    border: 1.5px solid #1A1714;
+
+    border-radius: 6px;
+
+    overflow: hidden;
+
+  }
+
+  .conn-row {
+
+    display: grid;
+
+    grid-template-columns: 140px 1fr;
+
+    border-bottom: 1px solid rgba(26,23,20,0.12);
+
+  }
+
+  .conn-row:last-child { border-bottom: none; }
+
+  .conn-cat {
+
+    background: #F1ECE2;
+
+    padding: 14px 12px;
+
+    font-weight: 600;
+
+    font-size: 14px;
+
+    display: flex;
+
+    align-items: center;
+
+    border-right: 1px solid rgba(26,23,20,0.12);
+
+  }
+
+  .conn-sides {
+
+    display: flex;
+
+    flex-direction: column;
+
+  }
+
+  .conn-subrow {
+
+    display: grid;
+
+    grid-template-columns: 70px 1fr 1fr 100px;
+
+    align-items: center;
+
+    padding: 8px 12px;
+
+    gap: 8px;
+
+    border-bottom: 1px dashed rgba(26,23,20,0.1);
+
+  }
+
+  .conn-subrow:last-child { border-bottom: none; }
+
+  .conn-subrow .label-side {
+
+    font-size: 12px;
+
+    color: #6B5F52;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.06em;
+
+    font-weight: 600;
+
+  }
+
+  .conn-subrow input {
+
+    width: 100%;
+
+    padding: 7px 10px;
+
+    border: 1px solid rgba(26,23,20,0.25);
+
+    border-radius: 4px;
+
+    font-size: 14px;
+
+    background: white;
+
+    font-variant-numeric: tabular-nums;
+
+  }
+
+  .conn-subrow input:focus { outline: none; border-color: #BB0E1F; box-shadow: 0 0 0 2px rgba(187,14,31,0.15); }
+
+  .conn-subrow .total-cell {
+
+    text-align: right;
+
+    font-weight: 700;
+
+    font-size: 15px;
+
+    font-variant-numeric: tabular-nums;
+
+    color: #1A1714;
+
+  }
+
+  .conn-subrow .total-cell.zero { color: rgba(26,23,20,0.3); font-weight: 400; }
+
+
+
+  /* Mobile responsive */
+
+  @media (max-width: 640px) {
+
+    .conn-row { grid-template-columns: 1fr; }
+
+    .conn-cat { border-right: none; border-bottom: 1px solid rgba(26,23,20,0.12); padding: 10px 12px; }
+
+    .conn-subrow { grid-template-columns: 60px 1fr 1fr 80px; padding: 8px 10px; gap: 6px; }
+
+    .conn-subrow .label-side { font-size: 11px; }
+
+    .conn-subrow input { padding: 6px 8px; font-size: 13px; }
+
+  }
+
+
+
+  /* Top-of-table column headers */
+
+  .conn-header {
+
+    display: grid;
+
+    grid-template-columns: 140px 70px 1fr 1fr 100px;
+
+    padding: 10px 12px;
+
+    background: #1A1714;
+
+    color: #FAF6EE;
+
+    font-size: 10px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.1em;
+
+    font-weight: 600;
+
+    gap: 8px;
+
+    align-items: center;
+
+  }
+
+  @media (max-width: 640px) {
+
+    .conn-header { grid-template-columns: 60px 1fr 1fr 80px; gap: 6px; padding: 8px 10px; font-size: 9px; }
+
+    .conn-header .header-cat-cell { display: none; }
+
+  }
+
+
+
+  /* Plan selector */
+
+  .plan-card {
+
+    border: 2px solid rgba(26,23,20,0.15);
+
+    border-radius: 6px;
+
+    padding: 14px;
+
+    background: white;
+
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+
+  }
+
+  .plan-card:hover { border-color: rgba(26,23,20,0.4); }
+
+  .plan-card.selected {
+
+    border-color: #BB0E1F;
+
+    background: rgba(187,14,31,0.04);
+
+  }
+
+
+
+  /* The huge savings card */
+
+  .savings-stamp {
+
+    background: linear-gradient(135deg, #BB0E1F 0%, #8B0A17 100%);
+
+    color: #FAF6EE;
+
+    border-radius: 12px;
+
+    padding: 32px 24px;
+
+    text-align: center;
+
+    position: relative;
+
+    overflow: hidden;
+
+    box-shadow: 0 8px 24px -8px rgba(187,14,31,0.4);
+
+  }
+
+  .savings-stamp::before {
+
+    content: '';
+
+    position: absolute;
+
+    inset: 0;
+
+    background-image:
+
+      radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1), transparent 50%),
+
+      radial-gradient(circle at 70% 80%, rgba(255,255,255,0.05), transparent 40%);
+
+    pointer-events: none;
+
+  }
+
+  .savings-stamp .inner { position: relative; z-index: 1; }
+
+  .savings-stamp .display {
+
+    font-size: 72px;
+
+    font-weight: 800;
+
+    line-height: 0.95;
+
+    letter-spacing: -0.02em;
+
+    font-variant-numeric: tabular-nums;
+
+  }
+
+  @media (min-width: 641px) {
+
+    .savings-stamp { padding: 44px 32px; }
+
+    .savings-stamp .display { font-size: 96px; }
+
+  }
+
+
+
+  /* Upsell variant */
+
+  .upsell-stamp {
+
+    background: linear-gradient(135deg, #1A1714 0%, #2A2420 100%);
+
+    color: #FAF6EE;
+
+    border-radius: 12px;
+
+    padding: 32px 24px;
+
+    text-align: center;
+
+    position: relative;
+
+    overflow: hidden;
+
+  }
+
+  .upsell-stamp::before {
+
+    content: '';
+
+    position: absolute;
+
+    inset: 0;
+
+    background-image: radial-gradient(circle at 70% 20%, rgba(184,153,104,0.18), transparent 50%);
+
+    pointer-events: none;
+
+  }
+
+  .upsell-stamp .inner { position: relative; z-index: 1; }
+
+  .upsell-stamp .display {
+
+    font-size: 64px;
+
+    font-weight: 800;
+
+    line-height: 0.95;
+
+    color: #B89968;
+
+    font-variant-numeric: tabular-nums;
+
+  }
+
+  @media (min-width: 641px) {
+
+    .upsell-stamp { padding: 44px 32px; }
+
+    .upsell-stamp .display { font-size: 88px; }
+
+  }
+
+
+
+  /* Benefit row */
+
+  .benefit-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    background: white;
+
+    border: 1px solid rgba(26,23,20,0.08);
+
+    border-radius: 6px;
+
+  }
+
+
+
+  /* Lang toggle */
+
+  .lang-pill {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 3px;
+
+    background: rgba(255,255,255,0.9);
+
+    border: 1px solid rgba(26,23,20,0.15);
+
+    border-radius: 999px;
+
+    gap: 2px;
+
+  }
+
+  .lang-pill button {
+
+    padding: 5px 12px;
+
+    font-size: 12px;
+
+    border-radius: 999px;
+
+    font-family: 'JetBrains Mono', monospace;
+
+    font-weight: 600;
+
+    color: #6B5F52;
+
+    transition: all 0.15s ease;
+
+    border: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+  }
+
+  .lang-pill button.active {
+
+    background: #1A1714;
+
+    color: #FAF6EE;
+
+  }
+
+
+
+  /* Big "Customer pays today" summary tile */
+
+  .summary-tile {
+
+    background: white;
+
+    border: 1.5px solid #1A1714;
+
+    border-radius: 6px;
+
+    padding: 18px 20px;
+
+  }
+
+  .summary-tile.airtel { border-color: #BB0E1F; background: rgba(187,14,31,0.03); }
+
+
+
+  /* Print */
+
+  @media print {
+
+    body { background: white; }
+
+    .no-print { display: none !important; }
+
+    .savings-stamp { background: white !important; color: black !important; border: 2px solid black; box-shadow: none; -webkit-print-color-adjust: exact; }
+
+    .savings-stamp::before { display: none; }
+
+    .savings-stamp .display { color: #BB0E1F; }
+
+    .upsell-stamp { background: white !important; color: black !important; border: 2px solid black; }
+
+    .upsell-stamp::before { display: none; }
+
+  }
+
+
+
+  /* Smooth number transitions */
+
+  .num-shift { transition: color 0.2s ease; }
+
+
+
+  /* Accordion cards for pitch math */
+
+  .accordion-card {
+
+    background: white;
+
+    border: 1.5px solid rgba(26,23,20,0.12);
+
+    border-radius: 8px;
+
+    overflow: hidden;
+
+    transition: border-color 0.18s ease;
+
+  }
+
+  .accordion-card.open { border-color: rgba(26,23,20,0.35); }
+
+  .accordion-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 14px 16px;
+
+    cursor: pointer;
+
+    user-select: none;
+
+    width: 100%;
+
+    text-align: left;
+
+    background: transparent;
+
+    border: none;
+
+    transition: background 0.15s ease;
+
+  }
+
+  .accordion-header:hover { background: rgba(26,23,20,0.03); }
+
+  .accordion-card.open .accordion-header { border-bottom: 1px solid rgba(26,23,20,0.08); }
+
+  .accordion-icon {
+
+    flex-shrink: 0;
+
+    width: 20px; height: 20px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #6B5F52;
+
+    transition: transform 0.18s ease;
+
+    font-weight: 700;
+
+  }
+
+  .accordion-card.open .accordion-icon { transform: rotate(90deg); color: #BB0E1F; }
+
+  .accordion-body { padding: 16px; background: #FAF6EE; }
+
+  .math-block {
+
+    background: white;
+
+    border-radius: 6px;
+
+    padding: 14px;
+
+    font-family: 'JetBrains Mono', monospace;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+
+    border: 1px dashed rgba(26,23,20,0.15);
+
+    font-variant-numeric: tabular-nums;
+
+  }
+
+  .math-block .math-em { color: #BB0E1F; font-weight: 600; }
+
+  .math-block .math-total { border-top: 1px solid rgba(26,23,20,0.15); margin-top: 6px; padding-top: 8px; font-weight: 700; color: #1A1714; }
+
+  .compare-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: baseline;
+
+    padding: 6px 0;
+
+    font-size: 13px;
+
+    border-bottom: 1px dashed rgba(26,23,20,0.08);
+
+  }
+
+  .compare-row:last-child { border-bottom: none; }
+
+  .compare-row .label { color: #6B5F52; }
+
+  .compare-row.highlight .label { color: #1A1714; font-weight: 700; }
+
+  .compare-row .value { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  .compare-row.highlight .value { color: #BB0E1F; font-weight: 700; }
+
+  .win-pill {
+
+    display: inline-block;
+
+    background: rgba(92,124,87,0.12);
+
+    color: #5C7C57;
+
+    border-left: 3px solid #5C7C57;
+
+    padding: 8px 12px;
+
+    border-radius: 0 4px 4px 0;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    margin-top: 12px;
+
+  }
+
+
+
+  /* OTT toggle row */
+
+  .ott-toggle-row {
+
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+
+  }
+
+  .ott-toggle-row.disabled { opacity: 0.4; }
+
+  .ott-toggle-row.disabled .ott-name-label { text-decoration: line-through; }
+
+  .ott-check {
+
+    width: 20px; height: 20px;
+
+    border-radius: 4px;
+
+    border: 1.5px solid #1A1714;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    background: white;
+
+    transition: all 0.15s ease;
+
+    color: transparent;
+
+  }
+
+  .ott-check.on { background: #1A1714; color: #FAF6EE; }
+
+
+
+  /* DTH-included benefit row — always-on, visually distinct */
+
+  .dth-benefit-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    background: rgba(92,124,87,0.08);
+
+    border: 1px solid #5C7C57;
+
+    border-radius: 6px;
+
+  }
+
+  .dth-check {
+
+    width: 20px; height: 20px;
+
+    border-radius: 4px;
+
+    background: #5C7C57;
+
+    color: #FAF6EE;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+  }
+
+</style>
+
+
+
+</head>
+
+<body>
+
+<div id="root"></div>
+
+
+
+<script type="text/babel" data-presets="env,react">
+
+const { useState, useMemo, useEffect } = React;
+
+
+
+/* ============================================================
+
+   ✏️ DATA — Plans (edit prices here if they change)
+
+   ============================================================ */
+
+
+
+const GST = 1.18;
+
+const OAP_DISCOUNT = 100;
+
+
+
+// Postpaid family plans (base price before GST)
+
+const POSTPAID_PLANS = [
+
+  { id: 'pp_449',  base: 449,  sims: 1, label: 'Individual Lite', subEn: '1 SIM · Xstream Play only', subHi: '1 SIM · सिर्फ Xstream Play' },
+
+  { id: 'pp_549',  base: 549,  sims: 1, label: 'Individual',      subEn: '1 SIM',  subHi: '1 SIM' },
+
+  { id: 'pp_699',  base: 699,  sims: 2, label: 'Family of 2',     subEn: '2 SIMs', subHi: '2 SIM' },
+
+  { id: 'pp_999',  base: 999,  sims: 3, label: 'Family of 3',     subEn: '3 SIMs', subHi: '3 SIM' },
+
+  { id: 'pp_1199', base: 1199, sims: 4, label: 'Family of 4',     subEn: '4 SIMs', subHi: '4 SIM' },
+
+  { id: 'pp_1399', base: 1399, sims: 5, label: 'Family of 5',     subEn: '5 SIMs', subHi: '5 SIM' },
+
+  { id: 'pp_1749', base: 1749, sims: 5, label: 'Premium 5 SIMs',  subEn: '5 SIMs · Netflix Standard', subHi: '5 SIM · Netflix Standard' },
+
+];
+
+
+
+// WiFi plans (base price before GST)
+
+const WIFI_PLANS = [
+
+  { id: 'wifi_499',  base: 499,  speedLabel: '40 Mbps' },
+
+  { id: 'wifi_599',  base: 599,  speedLabel: '30 Mbps'  },
+
+  { id: 'wifi_799',  base: 799,  speedLabel: '100 Mbps' },
+
+  { id: 'wifi_899',  base: 899,  speedLabel: '100 Mbps' },
+
+  { id: 'wifi_1199', base: 1199, speedLabel: '100 Mbps premium' },
+
+  { id: 'wifi_1599', base: 1599, speedLabel: '300 Mbps' },
+
+  { id: 'wifi_3999', base: 3999, speedLabel: '1 Gbps'   },
+
+];
+
+
+
+// Wi-Fi plans that REPLACE customer's DTH / cable bill (all except 499 and 799)
+
+const WIFI_INCLUDES_DTH = new Set(['wifi_599', 'wifi_899', 'wifi_1199', 'wifi_1599', 'wifi_3999']);
+
+
+
+// OTT catalog (monthly value)
+
+const OTT = {
+
+  jiohotstar_super: { name: 'JioHotstar Super', value: 149 },
+
+  netflix_basic:    { name: 'Netflix Basic',    value: 199 },
+
+  netflix_standard: { name: 'Netflix Standard', value: 499 },
+
+  prime:            { name: 'Amazon Prime',     value: 125 },
+
+  apple_tv:         { name: 'Apple TV+',        value: 99  },
+
+  apple_music:      { name: 'Apple Music',      value: 99  },
+
+  google_one:       { name: 'Google One 30GB',  value: 60  },
+
+  zee5:             { name: 'ZEE5',             value: 129 },
+
+  adobe:            { name: 'Adobe Express',    value: 333 },
+
+  xstream:          { name: 'Xstream Play',     value: 149 },
+
+};
+
+
+
+// Per-plan OTT inclusions (id => duration label)
+
+const WIFI_OTT = {
+
+  wifi_499:  { adobe: '12M', google_one: '6M' },
+
+  wifi_599:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
+
+  wifi_799:  { google_one: '6M', adobe: '12M' },
+
+  wifi_899:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
+
+  wifi_1199: { netflix_basic: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
+
+  wifi_1599: { netflix_basic: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
+
+  wifi_3999: { netflix_standard: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
+
+};
+
+const POSTPAID_OTT = {
+
+  pp_449:  { xstream: '3M' },
+
+  pp_549:  { jiohotstar_super: '12M', prime: '6M', adobe: '12M', xstream: '3M' },
+
+  pp_699:  { jiohotstar_super: '12M', prime: '6M', google_one: '6M', adobe: '12M', xstream: '3M' },
+
+  pp_999:  { jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
+
+  pp_1199: { jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
+
+  pp_1399: { netflix_basic: '12M', jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
+
+  pp_1749: { netflix_standard: '12M', jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
+
+};
+
+
+
+/* ============================================================
+
+   TRANSLATIONS — EN / HI
+
+   ============================================================ */
+
+
+
+const T = {
+
+  en: {
+
+    header_title: 'One Airtel',
+
+    header_sub: 'Sales calculator',
+
+
+
+    step1_title: 'What does the customer pay today?',
+
+    step1_hint: 'Enter what they currently pay every month, like in the pitchbook.',
+
+    col_count: 'How many',
+
+    col_amount: '₹ each / month',
+
+    col_total: 'Total / month',
+
+    cat_mobile: 'Mobile',
+
+    cat_wifi: 'Wi-Fi',
+
+    cat_tv: 'TV (DTH / Cable)',
+
+    cat_entertainment: 'Entertainment (Netflix, JioHotstar, etc.)',
+
+    side_airtel: 'Airtel',
+
+    side_others: 'Others',
+
+    entertainment_label: 'Total monthly spend on all OTT apps',
+
+    today_pays: 'Customer pays today',
+
+    per_month: '/ month',
+
+    per_year: '/ year',
+
+    gst_toggle: 'Customer knows plan price, not bill? Add 18% GST',
+
+    gst_toggle_on: 'Amounts include 18% GST',
+
+    gst_note: 'incl. GST',
+
+
+
+    step2_title: 'Suggest a One Airtel plan',
+
+    step2_hint: 'Pick a postpaid family plan and a Wi-Fi plan. We add 18% GST and take ₹100 off.',
+
+    postpaid_label: 'Postpaid plan',
+
+    wifi_label: 'Wi-Fi plan',
+
+    oap_label: 'On One Airtel',
+
+    oap_disc_note: '₹100/month off — both with Airtel',
+
+    select_a_plan: "Enter the customer's current bills above to see savings",
+
+    wifi_dth_included: 'Includes DTH / Cable TV replacement',
+
+
+
+    step3_savings: 'Congratulations!',
+
+    step3_save: 'You save',
+
+    step3_year: 'every year',
+
+    step3_includes: 'Plus FREE benefits worth',
+
+    step3_includes_2: 'every month',
+
+    step3_freebies: 'Included free with this plan',
+
+    dth_replaces_tv: 'DTH / Cable TV (replaces your current TV bill)',
+
+    dth_included_short: 'Included',
+
+
+
+    step3_upsell_pre: 'Spend just',
+
+    step3_upsell_post: 'more / month',
+
+    step3_upsell_note: 'And get FREE benefits worth',
+
+    step3_upsell_swap: 'every month — more than what you spend extra',
+
+
+
+    print: 'Print for customer',
+
+    reset: 'Reset',
+
+    screenshot_hint: 'Or just take a screenshot of this page — works the same.',
+
+
+
+    // XFE phone + submission
+
+    xfe_section_label: 'Your details (customer will see this)',
+
+    xfe_name_label: 'Your name',
+
+    xfe_name_placeholder: 'Full name',
+
+    xfe_label: 'Your phone number',
+
+    xfe_sublabel: '(customer will see this)',
+
+    xfe_placeholder: '98xxxxxxxx',
+
+    xfe_saved: 'Saved',
+
+    your_rep: 'Your Airtel rep',
+
+    submit_btn: 'Submit pitch',
+
+    submitting: 'Submitting...',
+
+    submitted_msg: 'Submitted! You can now save as PDF or screenshot to share.',
+
+    save_pdf_btn: 'Save as PDF',
+
+    please_enter_phone: 'Please enter your phone number first.',
+
+    please_enter_both: 'Please enter your name and phone number first.',
+
+    submission_error: 'Could not submit. Check internet and try again, or take a screenshot.',
+
+    lifetime: 'For lifetime',
+
+    suffix_m: ' months',
+
+    free: 'FREE',
+
+
+
+    // Pitch math accordions (collapsed by default)
+
+    pitch_math_header: 'Deeper pitch math (tap to expand if useful)',
+
+    persim_title: 'Per-SIM math',
+
+    persim_preview: 'Each SIM works out to',
+
+    persim_lede: "Peel out the Wi-Fi from the bundle. What's left, divided by SIMs, gives the per-SIM cost — the Wi-Fi cancels out, and the ₹100 discount is split across SIMs.",
+
+    persim_vs_label: 'Compare per-SIM:',
+
+    persim_vs_349: '₹349 prepaid (28d → 30d)',
+
+    persim_vs_449pre: '₹449 prepaid (28d → 30d)',
+
+    persim_vs_449pp: '₹449 postpaid + GST',
+
+    persim_this: 'This bundle, per SIM',
+
+    persim_win: 'Cheaper than ₹349 prepaid by',
+
+    wifi_math_title: 'Wi-Fi math',
+
+    wifi_preview: 'Effective Wi-Fi cost',
+
+    wifi_lede: "Anchor on the postpaid (customer keeps their family plan), and the Wi-Fi side absorbs the ₹100 discount. That makes the Wi-Fi rate one of the most aggressive in the market.",
+
+    wifi_vs_label: 'Compare Wi-Fi:',
+
+    wifi_vs_standalone: 'Standalone with GST',
+
+    wifi_this: 'In the bundle',
+
+    wifi_win: 'Effective ₹100 less per month',
+
+    bundle_title: 'Bundle math breakdown',
+
+    bundle_preview: 'Line-by-line: how we got to',
+
+    bundle_wifi_base: 'Wi-Fi base',
+
+    bundle_pp_base: 'Postpaid base',
+
+    bundle_subtotal: 'Subtotal',
+
+    bundle_gst: '× 18% GST',
+
+    bundle_discount: '− One Airtel discount',
+
+    bundle_total: '= Bundle price',
+
+
+
+    // OTT customization
+
+    ott_customize_hint: "Tap to remove an OTT if the customer won't use it. Effective benefit value updates.",
+
+    ott_effective: 'Effective benefits in this pitch',
+
+    ott_of: 'of',
+
+    ott_kept: 'kept',
+
+  },
+
+  hi: {
+
+    header_title: 'One Airtel',
+
+    header_sub: 'Sales calculator',
+
+
+
+    step1_title: 'Customer अभी क्या pay करते हैं?',
+
+    step1_hint: 'जैसे pitchbook में, अभी का monthly खर्चा यहाँ भर दीजिए।',
+
+    col_count: 'कितने हैं',
+
+    col_amount: 'हर एक का ₹ / month',
+
+    col_total: 'Total / month',
+
+    cat_mobile: 'Mobile',
+
+    cat_wifi: 'Wi-Fi',
+
+    cat_tv: 'TV (DTH / Cable)',
+
+    cat_entertainment: 'Entertainment (Netflix, JioHotstar आदि)',
+
+    side_airtel: 'Airtel',
+
+    side_others: 'अन्य',
+
+    entertainment_label: 'सब OTT apps पर monthly कुल खर्चा',
+
+    today_pays: 'अभी देते हैं',
+
+    per_month: '/ महीना',
+
+    per_year: '/ साल',
+
+    gst_toggle: 'Customer को plan price पता है, bill नहीं? 18% GST जोड़ें',
+
+    gst_toggle_on: 'Amounts में 18% GST जोड़ा गया है',
+
+    gst_note: 'GST सहित',
+
+
+
+    step2_title: 'One Airtel का plan suggest कीजिए',
+
+    step2_hint: 'एक postpaid family plan और एक Wi-Fi plan चुनिए। 18% GST जुड़ता है, ₹100 छूट मिलती है।',
+
+    postpaid_label: 'Postpaid plan',
+
+    wifi_label: 'Wi-Fi plan',
+
+    oap_label: 'One Airtel पर',
+
+    oap_disc_note: '₹100/महीना छूट — दोनों Airtel से लेने पर',
+
+    select_a_plan: 'Customer के current bills ऊपर भरिए, savings दिखेगी',
+
+    wifi_dth_included: 'DTH / Cable TV का replacement शामिल है',
+
+
+
+    step3_savings: 'बधाई हो!',
+
+    step3_save: 'बचत',
+
+    step3_year: 'हर साल',
+
+    step3_includes: 'साथ में FREE सुविधाएं — value',
+
+    step3_includes_2: 'हर महीना',
+
+    step3_freebies: 'इस plan में FREE मिलेगा',
+
+    dth_replaces_tv: 'DTH / Cable TV (आपका मौजूदा TV bill replace करता है)',
+
+    dth_included_short: 'शामिल',
+
+
+
+    step3_upsell_pre: 'बस',
+
+    step3_upsell_post: 'ज़्यादा / महीना',
+
+    step3_upsell_note: 'और पाइए FREE benefits जिनकी value है',
+
+    step3_upsell_swap: 'हर महीना — आपके extra खर्चे से ज़्यादा',
+
+
+
+    print: 'Customer के लिए Print करें',
+
+    reset: 'Reset',
+
+    screenshot_hint: 'या इस page का screenshot ले लीजिए — दोनों बराबर हैं।',
+
+
+
+    // XFE phone + submission
+
+    xfe_section_label: 'आपकी details (customer को दिखेगी)',
+
+    xfe_name_label: 'आपका नाम',
+
+    xfe_name_placeholder: 'पूरा नाम',
+
+    xfe_label: 'आपका phone number',
+
+    xfe_sublabel: '(customer को दिखेगा)',
+
+    xfe_placeholder: '98xxxxxxxx',
+
+    xfe_saved: 'Save हो गया',
+
+    your_rep: 'आपके Airtel rep',
+
+    submit_btn: 'Pitch submit करें',
+
+    submitting: 'Submit हो रहा है...',
+
+    submitted_msg: 'Submit हो गया! अब PDF या screenshot ले सकते हैं।',
+
+    save_pdf_btn: 'PDF Save करें',
+
+    please_enter_phone: 'पहले अपना phone number डालिए।',
+
+    please_enter_both: 'पहले अपना नाम और phone number डालिए।',
+
+    submission_error: 'Submit नहीं हो पाया। Internet check करके फिर try करें, या screenshot लीजिए।',
+
+    lifetime: 'हमेशा के लिए',
+
+    suffix_m: ' महीने',
+
+    free: 'FREE',
+
+
+
+    // Pitch math accordions
+
+    pitch_math_header: 'Deeper pitch math (ज़रूरत हो तो tap करके खोलिए)',
+
+    persim_title: 'Per-SIM math',
+
+    persim_preview: 'हर SIM की cost पड़ती है',
+
+    persim_lede: 'Bundle से Wi-Fi निकालिए। बचा हुआ, SIMs में divide करिए — वही per-SIM cost है। Wi-Fi cancel हो जाता है, ₹100 discount SIMs में बंटता है।',
+
+    persim_vs_label: 'Per-SIM compare:',
+
+    persim_vs_349: '₹349 prepaid (28d → 30d)',
+
+    persim_vs_449pre: '₹449 prepaid (28d → 30d)',
+
+    persim_vs_449pp: '₹449 postpaid + GST',
+
+    persim_this: 'इस bundle में, per SIM',
+
+    persim_win: '₹349 prepaid से सस्ता',
+
+    wifi_math_title: 'Wi-Fi math',
+
+    wifi_preview: 'Wi-Fi की effective cost',
+
+    wifi_lede: 'Postpaid पर anchor कीजिए (customer का family plan बना रहता है), Wi-Fi side पर ₹100 discount absorb होता है। इससे Wi-Fi rate market में सबसे sharp हो जाती है।',
+
+    wifi_vs_label: 'Wi-Fi compare:',
+
+    wifi_vs_standalone: 'Standalone GST के साथ',
+
+    wifi_this: 'Bundle में',
+
+    wifi_win: '₹100/महीना कम effective',
+
+    bundle_title: 'Bundle math breakdown',
+
+    bundle_preview: 'Line-by-line: कैसे आया',
+
+    bundle_wifi_base: 'Wi-Fi base',
+
+    bundle_pp_base: 'Postpaid base',
+
+    bundle_subtotal: 'Subtotal',
+
+    bundle_gst: '× 18% GST',
+
+    bundle_discount: '− One Airtel discount',
+
+    bundle_total: '= Bundle की कीमत',
+
+
+
+    // OTT customization
+
+    ott_customize_hint: 'जो OTT customer use नहीं करेगा उसे tap करके हटा दीजिए। Effective benefit value update होगी।',
+
+    ott_effective: 'Pitch में effective benefits',
+
+    ott_of: '/',
+
+    ott_kept: 'रखे',
+
+  },
+
+};
+
+
+
+/* ============================================================
+
+   HELPERS
+
+   ============================================================ */
+
+
+
+const fmt      = n => '₹' + Math.round(n).toLocaleString('en-IN');
+
+const fmtPlain = n => Math.round(n).toLocaleString('en-IN');
+
+const parseNum = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+
+
+
+function buildOAP(wifiId, postpaidId) {
+
+  const wifi = WIFI_PLANS.find(w => w.id === wifiId);
+
+  const pp   = POSTPAID_PLANS.find(p => p.id === postpaidId);
+
+  if (!wifi || !pp) return null;
+
+  const price = (wifi.base + pp.base) * GST - OAP_DISCOUNT;
+
+  // Merge OTT inclusions, picking longer duration when both have it
+
+  const order = { lifetime: 99, '12M': 12, '6M': 6, '3M': 3, '1M': 1 };
+
+  const wOtt = WIFI_OTT[wifiId] || {};
+
+  const pOtt = POSTPAID_OTT[postpaidId] || {};
+
+  const merged = {};
+
+  for (const k of new Set([...Object.keys(wOtt), ...Object.keys(pOtt)])) {
+
+    const a = wOtt[k], b = pOtt[k];
+
+    merged[k] = (order[a] || 0) >= (order[b] || 0) ? (a || b) : (b || a);
+
+  }
+
+  const benefits = Object.entries(merged)
+
+    .filter(([k]) => OTT[k])
+
+    .map(([k, dur]) => ({ id: k, name: OTT[k].name, value: OTT[k].value, duration: dur }))
+
+    .sort((a, b) => b.value - a.value);
+
+  return { wifi, pp, price, benefits, includesDTH: WIFI_INCLUDES_DTH.has(wifiId) };
+
+}
+
+
+
+/* ============================================================
+
+   APP
+
+   ============================================================ */
+
+
+
+function App() {
+
+  const [lang, setLang] = useState(() => {
+
+    try { return localStorage.getItem('oap_lang') || 'en'; } catch { return 'en'; }
+
+  });
+
+  useEffect(() => {
+
+    try { localStorage.setItem('oap_lang', lang); } catch {}
+
+    document.body.setAttribute('data-lang', lang);
+
+  }, [lang]);
+
+  const t = key => T[lang][key] || T.en[key] || key;
+
+
+
+  // XFE Phone — auto-saved, persists across sessions
+
+  const [xfePhone, setXfePhone] = useState(() => {
+
+    try { return localStorage.getItem('oap_xfe_phone') || ''; } catch { return ''; }
+
+  });
+
+  useEffect(() => {
+
+    try { localStorage.setItem('oap_xfe_phone', xfePhone); } catch {}
+
+  }, [xfePhone]);
+
+
+
+  // XFE Name — auto-saved, persists across sessions
+
+  const [xfeName, setXfeName] = useState(() => {
+
+    try { return localStorage.getItem('oap_xfe_name') || ''; } catch { return ''; }
+
+  });
+
+  useEffect(() => {
+
+    try { localStorage.setItem('oap_xfe_name', xfeName); } catch {}
+
+  }, [xfeName]);
+
+
+
+  // Submission state
+
+  const [submitted, setSubmitted] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+
+
+
+  // STEP 1 inputs — current bills (gst: per-row GST toggle)
+
+  // NOTE: `perMonth` is the per-SIM (per-connection) cost. Row total = count × perMonth.
+
+  // Storage key bumped to v5 to discard any test data entered with the brief "totals" semantics.
+
+  const [bills, setBills] = useState(() => {
+
+    try {
+
+      const saved = localStorage.getItem('oap_bills_v5');
+
+      if (saved) return JSON.parse(saved);
+
+    } catch {}
+
+    return {
+
+      mobileAirtel:   { count: '', perMonth: '', gst: false },
+
+      mobileOthers:   { count: '', perMonth: '', gst: false },
+
+      wifiAirtel:     { count: '', perMonth: '', gst: false },
+
+      wifiOthers:     { count: '', perMonth: '', gst: false },
+
+      tvAirtel:       { count: '', perMonth: '', gst: false },
+
+      tvOthers:       { count: '', perMonth: '', gst: false },
+
+      entertainment:  '',
+
+    };
+
+  });
+
+  useEffect(() => {
+
+    try { localStorage.setItem('oap_bills_v5', JSON.stringify(bills)); } catch {}
+
+  }, [bills]);
+
+
+
+  const updateBill = (key, field, value) => {
+
+    if (key === 'entertainment') {
+
+      setBills({ ...bills, entertainment: value });
+
+    } else {
+
+      setBills({ ...bills, [key]: { ...bills[key], [field]: value } });
+
+    }
+
+  };
+
+
+
+  // Toggle GST for a single row
+
+  const toggleRowGst = (key) => {
+
+    setBills({ ...bills, [key]: { ...bills[key], gst: !bills[key].gst } });
+
+  };
+
+
+
+  // STEP 2 — suggested plan
+
+  const [ppId, setPpId] = useState('pp_699');
+
+  const [wifiId, setWifiId] = useState('wifi_599');
+
+
+
+  // OTT toggles — disabledMap[ottId] = true means this OTT is unchecked
+
+  const [ottDisabled, setOttDisabled] = useState({});
+
+
+
+  // Accordion expansion state for pitch-math panels
+
+  const [expanded, setExpanded] = useState({ persim: false, wifi: false, bundle: false });
+
+
+
+  // Reset OTT toggles when plans change (different bundle = different OTTs included)
+
+  useEffect(() => { setOttDisabled({}); }, [ppId, wifiId]);
+
+
+
+  // Compute current bill totals — `perMonth` is the per-SIM (per-connection) cost.
+
+  // GST flag, if on, adds 18% to that row's total.
+
+  const rowTotal = (row) => {
+
+    const base = parseNum(row.count) * parseNum(row.perMonth);
+
+    return row.gst ? base * GST : base;
+
+  };
+
+  const currentMonthly = useMemo(() => {
+
+    const rt = (row) => {
+
+      const base = parseNum(row.count) * parseNum(row.perMonth);
+
+      return row.gst ? base * GST : base;
+
+    };
+
+    return rt(bills.mobileAirtel) + rt(bills.mobileOthers)
+
+         + rt(bills.wifiAirtel)   + rt(bills.wifiOthers)
+
+         + rt(bills.tvAirtel)     + rt(bills.tvOthers)
+
+         + parseNum(bills.entertainment);
+
+  }, [bills]);
+
+
+
+  // TV total — used in savings calc; absorbed into OAP when wifi plan includes DTH
+
+  const tvTotal = useMemo(() => {
+
+    const rt = (row) => {
+
+      const base = parseNum(row.count) * parseNum(row.perMonth);
+
+      return row.gst ? base * GST : base;
+
+    };
+
+    return rt(bills.tvAirtel) + rt(bills.tvOthers);
+
+  }, [bills]);
+
+
+
+  // OAP bundle
+
+  const oap = useMemo(() => buildOAP(wifiId, ppId), [wifiId, ppId]);
+
+  const wifiIncludesDTH = !!(oap && oap.includesDTH);
+
+  const fullOttValue    = useMemo(() => oap ? oap.benefits.reduce((s, b) => s + b.value, 0) : 0, [oap]);
+
+  const enabledOttValue = useMemo(() => oap ? oap.benefits.filter(b => !ottDisabled[b.id]).reduce((s, b) => s + b.value, 0) : 0, [oap, ottDisabled]);
+
+  const oapBenefitsValue = enabledOttValue; // what we show in the pitch (after toggles)
+
+  const enabledOttCount = useMemo(() => oap ? oap.benefits.filter(b => !ottDisabled[b.id]).length : 0, [oap, ottDisabled]);
+
+
+
+  // Per-SIM and Wi-Fi math (for the optional pitch panels)
+
+  const pitchMath = useMemo(() => {
+
+    if (!oap) return null;
+
+    const ppGST = oap.pp.base * GST;
+
+    const wifiGST = oap.wifi.base * GST;
+
+    const perSim = (ppGST - OAP_DISCOUNT) / oap.pp.sims;
+
+    const wifiEffective = wifiGST - OAP_DISCOUNT;
+
+    return { ppGST, wifiGST, perSim, wifiEffective, persimVs349: 374 - perSim };
+
+  }, [oap]);
+
+
+
+  // Savings calc:
+
+  // - If the chosen Wi-Fi plan includes DTH, customer's TV bill goes to zero → it's absorbed
+
+  //   into the bundle, so we drop it from `newMonthly`.
+
+  // - If the chosen Wi-Fi plan does NOT include DTH (wifi_499, wifi_799), customer still
+
+  //   pays their TV bill separately on top of the OAP bundle.
+
+  const newMonthly = oap
+
+    ? oap.price + (wifiIncludesDTH ? 0 : tvTotal)
+
+    : 0;
+
+  const monthlySavings = currentMonthly - newMonthly;
+
+  const yearlySavings = monthlySavings * 12;
+
+  const isPositive = monthlySavings >= 0;
+
+
+
+  const hasInputs = currentMonthly > 0;
+
+
+
+  const reset = () => {
+
+    setBills({
+
+      mobileAirtel:   { count: '', perMonth: '', gst: false },
+
+      mobileOthers:   { count: '', perMonth: '', gst: false },
+
+      wifiAirtel:     { count: '', perMonth: '', gst: false },
+
+      wifiOthers:     { count: '', perMonth: '', gst: false },
+
+      tvAirtel:       { count: '', perMonth: '', gst: false },
+
+      tvOthers:       { count: '', perMonth: '', gst: false },
+
+      entertainment:  '',
+
+    });
+
+    setSubmitted(false);
+
+  };
+
+
+
+  // Build a readable breakdown of customer's current bills
+
+  const buildBillBreakdown = () => {
+
+    const parts = [];
+
+    const row = (label, r) => {
+
+      const c = parseNum(r.count), p = parseNum(r.perMonth);
+
+      if (c > 0 && p > 0) parts.push(`${label}: ${c}×₹${p}${r.gst ? ' +GST' : ''}=₹${Math.round(c*p*(r.gst?GST:1))}`);
+
+    };
+
+    row('Mobile Airtel', bills.mobileAirtel);
+
+    row('Mobile Others', bills.mobileOthers);
+
+    row('WiFi Airtel', bills.wifiAirtel);
+
+    row('WiFi Others', bills.wifiOthers);
+
+    row('TV Airtel', bills.tvAirtel);
+
+    row('TV Others', bills.tvOthers);
+
+    const ent = parseNum(bills.entertainment);
+
+    if (ent > 0) parts.push(`Entertainment: ₹${ent}`);
+
+    return parts.length ? parts.join(' | ') + ` | TOTAL ₹${Math.round(currentMonthly)}/mo` : '';
+
+  };
+
+
+
+  // Submit pitch data to Google Sheet
+
+  const submitToSheet = async () => {
+
+    const phone = xfePhone.trim();
+
+    const name = xfeName.trim();
+
+    if (!phone || !name) {
+
+      alert(t('please_enter_both'));
+
+      return;
+
+    }
+
+    setSubmitting(true);
+
+    try {
+
+      const ppPlan = POSTPAID_PLANS.find(p => p.id === ppId);
+
+      const wifiPlan = WIFI_PLANS.find(w => w.id === wifiId);
+
+      const payload = {
+
+        xfeName: name,
+
+        xfePhone: phone,
+
+        customerCurrentMonthly: buildBillBreakdown(),
+
+        postpaidPlan: ppPlan ? `₹${ppPlan.base} ${ppPlan.label} (${ppPlan.sims} SIM${ppPlan.sims>1?'s':''})` : '',
+
+        wifiPlan: wifiPlan ? `₹${wifiPlan.base} ${wifiPlan.speedLabel}${wifiIncludesDTH ? ' +DTH' : ''}` : '',
+
+        dthIncluded: wifiIncludesDTH ? 'Yes' : 'No',
+
+        oapMonthlyBreakdown: oap ? `₹${oap.wifi.base} WiFi + ₹${oap.pp.base} Postpaid = ₹${Math.round((oap.wifi.base+oap.pp.base)*GST)} (with 18% GST) − ₹100 discount = ₹${Math.round(oap.price)}/mo${wifiIncludesDTH ? ' (DTH included)' : ''}` : '',
+
+        monthlySavings: Math.round(monthlySavings),
+
+        yearlySavings: Math.round(yearlySavings),
+
+        ottValue: Math.round(oapBenefitsValue),
+
+      };
+
+
+
+      // Use no-cors mode since Apps Script returns opaque response from cross-origin
+
+      await fetch('https://script.google.com/macros/s/AKfycbzZkGTyqMThsvs1CtK_F90l3nuOtht7ed0hqgcNQVKRmsNX5ETNUa2Xa5ozDFUklChp/exec', {
+
+        method: 'POST',
+
+        mode: 'no-cors',
+
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+
+        body: JSON.stringify(payload),
+
+      });
+
+      setSubmitted(true);
+
+    } catch (err) {
+
+      console.error('Submission failed:', err);
+
+      alert(t('submission_error'));
+
+    } finally {
+
+      setSubmitting(false);
+
+    }
+
+  };
+
+
+
+  return (
+
+    <div className="min-h-screen pb-16">
+
+
+
+      {/* HEADER */}
+
+      <header className="bg-white border-b border-ink/10 sticky top-0 z-30 no-print">
+
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+
+          <div className="flex items-center gap-2.5">
+
+            <div className="w-8 h-8 rounded-full bg-airtelDeep flex items-center justify-center">
+
+              <div className="w-2.5 h-2.5 rounded-full bg-cream"></div>
+
+            </div>
+
+            <div className="leading-tight">
+
+              <div className="text-base font-bold">{t('header_title')}</div>
+
+              <div className="text-[11px] mono uppercase tracking-wider text-warmgray">{t('header_sub')}</div>
+
+            </div>
+
+          </div>
+
+          <div className="lang-pill">
+
+            <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
+
+            <button className={lang === 'hi' ? 'active' : ''} onClick={() => setLang('hi')}>हिं</button>
+
+          </div>
+
+        </div>
+
+      </header>
+
+
+
+      {/* XFE NAME + PHONE STRIP — auto-saved, visible to customer in savings stamp */}
+
+      <div className="bg-cream2 border-b border-ink/10 no-print">
+
+        <div className="max-w-4xl mx-auto px-4 py-3">
+
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+
+            <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('xfe_section_label')}</div>
+
+            {xfeName.trim() && xfePhone.trim() && (
+
+              <span className="text-[11px] text-sage font-semibold mono">✓ {t('xfe_saved')}</span>
+
+            )}
+
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+            <input
+
+              type="text"
+
+              placeholder={t('xfe_name_placeholder')}
+
+              value={xfeName}
+
+              onChange={e => setXfeName(e.target.value)}
+
+              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white text-base font-semibold focus:border-airtelDeep focus:outline-none"
+
+              style={{minHeight:'40px'}}
+
+            />
+
+            <input
+
+              type="tel"
+
+              inputMode="tel"
+
+              placeholder={t('xfe_placeholder')}
+
+              value={xfePhone}
+
+              onChange={e => setXfePhone(e.target.value)}
+
+              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white tabular text-base font-semibold focus:border-airtelDeep focus:outline-none"
+
+              style={{minHeight:'40px'}}
+
+            />
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      {/* ============ STEP 1: WHAT THEY PAY TODAY ============ */}
+
+      <section className="max-w-4xl mx-auto px-4 pt-6">
+
+        <div className="flex items-center gap-3 mb-2">
+
+          <span className="step-num">1</span>
+
+          <h2 className="text-xl sm:text-2xl font-bold">{t('step1_title')}</h2>
+
+        </div>
+
+        <p className="text-sm text-warmgray ml-12 mb-4">{t('step1_hint')}</p>
+
+
+
+        <div className="conn-table">
+
+          {/* Header row — only visible on desktop */}
+
+          <div className="conn-header">
+
+            <span className="header-cat-cell">{/* category */}</span>
+
+            <span></span>
+
+            <span>{t('col_count')}</span>
+
+            <span>{t('col_amount')}</span>
+
+            <span className="text-right">{t('col_total')}</span>
+
+          </div>
+
+
+
+          <ConnRow
+
+            label={t('cat_mobile')}
+
+            airtelRow={bills.mobileAirtel}
+
+            othersRow={bills.mobileOthers}
+
+            airtelKey="mobileAirtel" othersKey="mobileOthers"
+
+            sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
+
+            onUpdate={(side, field, v) => updateBill(side === 'a' ? 'mobileAirtel' : 'mobileOthers', field, v)}
+
+            onToggleGst={toggleRowGst}
+
+          />
+
+          <ConnRow
+
+            label={t('cat_wifi')}
+
+            airtelRow={bills.wifiAirtel}
+
+            othersRow={bills.wifiOthers}
+
+            airtelKey="wifiAirtel" othersKey="wifiOthers"
+
+            sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
+
+            onUpdate={(side, field, v) => updateBill(side === 'a' ? 'wifiAirtel' : 'wifiOthers', field, v)}
+
+            onToggleGst={toggleRowGst}
+
+          />
+
+          <ConnRow
+
+            label={t('cat_tv')}
+
+            airtelRow={bills.tvAirtel}
+
+            othersRow={bills.tvOthers}
+
+            airtelKey="tvAirtel" othersKey="tvOthers"
+
+            sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
+
+            onUpdate={(side, field, v) => updateBill(side === 'a' ? 'tvAirtel' : 'tvOthers', field, v)}
+
+            onToggleGst={toggleRowGst}
+
+          />
+
+          {/* Entertainment — single field */}
+
+          <div className="conn-row">
+
+            <div className="conn-cat">{t('cat_entertainment')}</div>
+
+            <div className="conn-sides">
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 110px',gap:'8px',alignItems:'center',padding:'10px 12px'}}>
+
+                <span className="text-[12px] text-warmgray">{t('entertainment_label')}</span>
+
+                <input
+
+                  type="number"
+
+                  inputMode="decimal"
+
+                  placeholder="₹"
+
+                  value={bills.entertainment}
+
+                  onChange={e => updateBill('entertainment', null, e.target.value)}
+
+                  className="tabular text-right"
+
+                  style={{padding:'7px 10px',border:'1px solid rgba(26,23,20,0.25)',borderRadius:'4px',background:'white',fontSize:'14px'}}
+
+                />
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+
+        {/* Today total */}
+
+        <div className="summary-tile mt-4">
+
+          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+
+            <div className="text-sm font-semibold uppercase tracking-wider mono text-warmgray">{t('today_pays')}</div>
+
+            <div className="flex items-baseline gap-4 tabular">
+
+              <div>
+
+                <span className="text-3xl sm:text-4xl font-bold">{fmt(currentMonthly)}</span>
+
+                <span className="text-warmgray text-sm ml-1">{t('per_month')}</span>
+
+              </div>
+
+              <div className="text-warmgray text-sm">
+
+                <span className="text-base font-semibold text-ink">{fmt(currentMonthly * 12)}</span>
+
+                <span className="ml-1">{t('per_year')}</span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      {/* ============ STEP 2: SUGGEST A PLAN ============ */}
+
+      <section className="max-w-4xl mx-auto px-4 pt-10">
+
+        <div className="flex items-center gap-3 mb-2">
+
+          <span className="step-num">2</span>
+
+          <h2 className="text-xl sm:text-2xl font-bold">{t('step2_title')}</h2>
+
+        </div>
+
+        <p className="text-sm text-warmgray ml-12 mb-4">{t('step2_hint')}</p>
+
+
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+
+          <div>
+
+            <div className="text-[11px] uppercase tracking-wider mono text-warmgray mb-2 font-semibold">{t('postpaid_label')}</div>
+
+            <select
+
+              value={ppId}
+
+              onChange={e => setPpId(e.target.value)}
+
+              className="w-full p-3 border-2 border-ink/15 rounded-md bg-white text-base font-medium focus:border-airtelDeep focus:outline-none"
+
+            >
+
+              {POSTPAID_PLANS.map(p => (
+
+                <option key={p.id} value={p.id}>
+
+                  ₹{p.base} — {p.label}
+
+                </option>
+
+              ))}
+
+            </select>
+
+            <div className="text-[11px] text-warmgray mt-1.5">{POSTPAID_PLANS.find(p=>p.id===ppId)?.[lang==='hi'?'subHi':'subEn']}</div>
+
+          </div>
+
+
+
+          <div>
+
+            <div className="text-[11px] uppercase tracking-wider mono text-warmgray mb-2 font-semibold">{t('wifi_label')}</div>
+
+            <select
+
+              value={wifiId}
+
+              onChange={e => setWifiId(e.target.value)}
+
+              className="w-full p-3 border-2 border-ink/15 rounded-md bg-white text-base font-medium focus:border-airtelDeep focus:outline-none"
+
+            >
+
+              {WIFI_PLANS.map(w => (
+
+                <option key={w.id} value={w.id}>
+
+                  ₹{w.base} — {w.speedLabel}{WIFI_INCLUDES_DTH.has(w.id) ? ' + DTH' : ''}
+
+                </option>
+
+              ))}
+
+            </select>
+
+            {wifiIncludesDTH && (
+
+              <div className="text-[11px] text-sage mt-1.5 font-semibold">✓ {t('wifi_dth_included')}</div>
+
+            )}
+
+          </div>
+
+        </div>
+
+
+
+        <div className="summary-tile airtel">
+
+          <div className="text-[11px] text-airtelDeep mono uppercase tracking-wider mb-2 font-semibold">{t('oap_disc_note')}</div>
+
+          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+
+            <div className="text-sm font-semibold uppercase tracking-wider mono text-warmgray">{t('oap_label')}</div>
+
+            <div className="flex items-baseline gap-4 tabular">
+
+              <div>
+
+                <span className="text-3xl sm:text-4xl font-bold text-airtelDeep">{fmt(oap ? oap.price : 0)}</span>
+
+                <span className="text-warmgray text-sm ml-1">{t('per_month')}</span>
+
+              </div>
+
+              <div className="text-warmgray text-sm">
+
+                <span className="text-base font-semibold text-ink">{fmt(oap ? oap.price * 12 : 0)}</span>
+
+                <span className="ml-1">{t('per_year')}</span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      {/* ============ OPTIONAL PITCH MATH (collapsed) ============ */}
+
+      {oap && pitchMath && (
+
+        <section className="max-w-4xl mx-auto px-4 pt-6 no-print">
+
+          <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold mb-3 ml-12">{t('pitch_math_header')}</div>
+
+
+
+          <div className="flex flex-col gap-2 ml-12">
+
+
+
+            {/* Per-SIM accordion */}
+
+            <div className={`accordion-card ${expanded.persim ? 'open' : ''}`}>
+
+              <button className="accordion-header" onClick={() => setExpanded({...expanded, persim: !expanded.persim})}>
+
+                <span className="accordion-icon">▸</span>
+
+                <div className="flex-1">
+
+                  <div className="text-sm font-bold">{t('persim_title')}</div>
+
+                  <div className="text-xs text-warmgray mt-0.5">{t('persim_preview')} <span className="text-airtelDeep font-bold tabular">{fmt(pitchMath.perSim)}</span> / SIM</div>
+
+                </div>
+
+              </button>
+
+              {expanded.persim && (
+
+                <div className="accordion-body">
+
+                  <p className="text-sm text-warmgray mb-3 leading-relaxed">{t('persim_lede')}</p>
+
+                  <div className="math-block">
+
+                    <div>(<span className="math-em">{oap.pp.base}</span> × 1.18) − <span className="math-em">100</span></div>
+
+                    <div>= {pitchMath.ppGST.toFixed(2)} − 100</div>
+
+                    <div>= {(pitchMath.ppGST - 100).toFixed(2)}</div>
+
+                    <div className="math-total">÷ <span className="math-em">{oap.pp.sims}</span> SIM{oap.pp.sims > 1 ? 's' : ''} = {fmt(pitchMath.perSim)} / SIM</div>
+
+                  </div>
+
+                  <div className="mt-3">
+
+                    <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold mb-2">{t('persim_vs_label')}</div>
+
+                    <div className="compare-row"><span className="label">{t('persim_vs_349')}</span><span className="value">{fmt(374)}</span></div>
+
+                    <div className="compare-row"><span className="label">{t('persim_vs_449pre')}</span><span className="value">{fmt(481)}</span></div>
+
+                    <div className="compare-row"><span className="label">{t('persim_vs_449pp')}</span><span className="value">{fmt(530)}</span></div>
+
+                    <div className="compare-row highlight"><span className="label">{t('persim_this')}</span><span className="value">{fmt(pitchMath.perSim)}</span></div>
+
+                  </div>
+
+                  {pitchMath.persimVs349 > 0 && (
+
+                    <div className="win-pill">✓ {t('persim_win')} {fmt(pitchMath.persimVs349)}</div>
+
+                  )}
+
+                </div>
+
+              )}
+
+            </div>
+
+
+
+            {/* Wi-Fi accordion */}
+
+            <div className={`accordion-card ${expanded.wifi ? 'open' : ''}`}>
+
+              <button className="accordion-header" onClick={() => setExpanded({...expanded, wifi: !expanded.wifi})}>
+
+                <span className="accordion-icon">▸</span>
+
+                <div className="flex-1">
+
+                  <div className="text-sm font-bold">{t('wifi_math_title')}</div>
+
+                  <div className="text-xs text-warmgray mt-0.5">{t('wifi_preview')} <span className="text-airtelDeep font-bold tabular">{fmt(pitchMath.wifiEffective)}</span> / {lang==='hi' ? 'महीना' : 'mo'} ({oap.wifi.speedLabel})</div>
+
+                </div>
+
+              </button>
+
+              {expanded.wifi && (
+
+                <div className="accordion-body">
+
+                  <p className="text-sm text-warmgray mb-3 leading-relaxed">{t('wifi_lede')}</p>
+
+                  <div className="math-block">
+
+                    <div>(<span className="math-em">{oap.wifi.base}</span> × 1.18) − <span className="math-em">100</span></div>
+
+                    <div>= {pitchMath.wifiGST.toFixed(2)} − 100</div>
+
+                    <div className="math-total">= {fmt(pitchMath.wifiEffective)} / {lang==='hi' ? 'महीना' : 'month'}</div>
+
+                  </div>
+
+                  <div className="mt-3">
+
+                    <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold mb-2">{t('wifi_vs_label')}</div>
+
+                    <div className="compare-row"><span className="label">{t('wifi_vs_standalone')} (₹{oap.wifi.base} × 1.18)</span><span className="value">{fmt(pitchMath.wifiGST)}</span></div>
+
+                    <div className="compare-row highlight"><span className="label">{t('wifi_this')}</span><span className="value">{fmt(pitchMath.wifiEffective)}</span></div>
+
+                  </div>
+
+                  <div className="win-pill">✓ {t('wifi_win')}</div>
+
+                </div>
+
+              )}
+
+            </div>
+
+
+
+            {/* Bundle math accordion */}
+
+            <div className={`accordion-card ${expanded.bundle ? 'open' : ''}`}>
+
+              <button className="accordion-header" onClick={() => setExpanded({...expanded, bundle: !expanded.bundle})}>
+
+                <span className="accordion-icon">▸</span>
+
+                <div className="flex-1">
+
+                  <div className="text-sm font-bold">{t('bundle_title')}</div>
+
+                  <div className="text-xs text-warmgray mt-0.5">{t('bundle_preview')} <span className="text-airtelDeep font-bold tabular">{fmt(oap.price)}</span></div>
+
+                </div>
+
+              </button>
+
+              {expanded.bundle && (
+
+                <div className="accordion-body">
+
+                  <div className="math-block">
+
+                    <div><span className="label" style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_wifi_base')}</span> <span className="math-em">{fmt(oap.wifi.base)}</span></div>
+
+                    <div><span className="label" style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_pp_base')}</span> <span className="math-em">{fmt(oap.pp.base)}</span></div>
+
+                    <div style={{borderTop:'1px solid rgba(26,23,20,0.1)',marginTop:'4px',paddingTop:'4px'}}><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_subtotal')}</span> {fmt(oap.wifi.base + oap.pp.base)}</div>
+
+                    <div><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_gst')}</span> {fmt((oap.wifi.base + oap.pp.base) * GST)}</div>
+
+                    <div style={{color:'#BB0E1F'}}><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_discount')}</span> − {fmt(OAP_DISCOUNT)}</div>
+
+                    <div className="math-total"><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_total')}</span> {fmt(oap.price)}</div>
+
+                  </div>
+
+                </div>
+
+              )}
+
+            </div>
+
+
+
+          </div>
+
+        </section>
+
+      )}
+
+
+
+      {/* ============ STEP 3: THE SAVINGS ============ */}
+
+      <section className="max-w-4xl mx-auto px-4 pt-10">
+
+        <div className="flex items-center gap-3 mb-4">
+
+          <span className="step-num">3</span>
+
+          <h2 className="text-xl sm:text-2xl font-bold">{lang==='hi' ? 'ये दिखाइए' : 'Show this to the customer'}</h2>
+
+        </div>
+
+
+
+        {!hasInputs ? (
+
+          <div className="bg-cream2 border-2 border-dashed border-ink/15 rounded-lg p-8 text-center text-warmgray italic">
+
+            {t('select_a_plan')}
+
+          </div>
+
+        ) : isPositive ? (
+
+          <div className="savings-stamp">
+
+            <div className="inner">
+
+              <div className="text-[11px] mono uppercase tracking-[0.25em] opacity-80 mb-3">— {t('step3_savings').toUpperCase()}</div>
+
+              <div className="text-lg sm:text-xl opacity-90 mb-2">{t('step3_save')}</div>
+
+              <div className="display">{fmt(yearlySavings)}</div>
+
+              <div className="text-lg sm:text-xl opacity-90 mt-2">{t('step3_year')}</div>
+
+              <div className="mt-4 pt-4 border-t border-white/20 text-sm opacity-80">
+
+                ({fmt(monthlySavings)} {t('per_month')})
+
+              </div>
+
+              {oapBenefitsValue > 0 && (
+
+                <div className="mt-5 pt-5 border-t border-white/20">
+
+                  <div className="text-[12px] uppercase tracking-wider opacity-80 mb-1">{t('step3_includes')}</div>
+
+                  <div className="text-3xl sm:text-4xl font-bold tabular">{fmt(oapBenefitsValue)}<span className="text-base opacity-80 ml-1">{t('step3_includes_2')}</span></div>
+
+                </div>
+
+              )}
+
+              {(xfeName.trim() || xfePhone.trim()) && (
+
+                <div className="mt-5 pt-4 border-t border-white/20 text-sm">
+
+                  <div className="opacity-75 text-[11px] uppercase tracking-wider mb-1">{t('your_rep')}</div>
+
+                  <div className="font-bold text-base tracking-wide">
+
+                    {xfeName.trim() && <span>{xfeName}</span>}
+
+                    {xfeName.trim() && xfePhone.trim() && <span className="opacity-60 mx-2">·</span>}
+
+                    {xfePhone.trim() && <span className="tabular">{xfePhone}</span>}
+
+                  </div>
+
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+        ) : (
+
+          <div className="upsell-stamp">
+
+            <div className="inner">
+
+              <div className="text-[11px] mono uppercase tracking-[0.25em] opacity-70 mb-3 text-gold">— SMART UPGRADE</div>
+
+              <div className="text-lg sm:text-xl opacity-90 mb-2">{t('step3_upsell_pre')}</div>
+
+              <div className="display">{fmt(Math.abs(monthlySavings))}</div>
+
+              <div className="text-lg sm:text-xl opacity-90 mt-2">{t('step3_upsell_post')}</div>
+
+              {oapBenefitsValue > Math.abs(monthlySavings) && (
+
+                <div className="mt-5 pt-5 border-t border-white/15">
+
+                  <div className="text-[12px] uppercase tracking-wider opacity-70 mb-1">{t('step3_upsell_note')}</div>
+
+                  <div className="text-3xl sm:text-4xl font-bold tabular text-gold">{fmt(oapBenefitsValue)}</div>
+
+                  <div className="text-sm opacity-80 mt-1">{t('step3_upsell_swap')}</div>
+
+                </div>
+
+              )}
+
+              {(xfeName.trim() || xfePhone.trim()) && (
+
+                <div className="mt-5 pt-4 border-t border-white/15 text-sm">
+
+                  <div className="opacity-75 text-[11px] uppercase tracking-wider mb-1">{t('your_rep')}</div>
+
+                  <div className="font-bold text-base tracking-wide text-gold">
+
+                    {xfeName.trim() && <span>{xfeName}</span>}
+
+                    {xfeName.trim() && xfePhone.trim() && <span className="opacity-60 mx-2">·</span>}
+
+                    {xfePhone.trim() && <span className="tabular">{xfePhone}</span>}
+
+                  </div>
+
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+        )}
+
+
+
+        {/* Freebies — DTH (if applicable) + OTT list (toggleable) */}
+
+        {oap && (oap.benefits.length > 0 || wifiIncludesDTH) && (
+
+          <div className="mt-6">
+
+            <div className="flex items-baseline justify-between flex-wrap gap-2 mb-2">
+
+              <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('step3_freebies')}</div>
+
+              <div className="text-[11px] text-warmgray italic no-print">{t('ott_customize_hint')}</div>
+
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+              {wifiIncludesDTH && (
+
+                <div className="dth-benefit-row">
+
+                  <span className="dth-check">✓</span>
+
+                  <span className="font-semibold flex-1">{t('dth_replaces_tv')}</span>
+
+                  <span className="text-[10px] mono uppercase tracking-wider text-warmgray">{t('lifetime')}</span>
+
+                  <span className="font-bold tabular text-sm" style={{color:'#5C7C57'}}>{t('dth_included_short')}</span>
+
+                </div>
+
+              )}
+
+              {oap.benefits.map(b => {
+
+                const off = !!ottDisabled[b.id];
+
+                return (
+
+                  <div
+
+                    key={b.id}
+
+                    onClick={() => setOttDisabled({ ...ottDisabled, [b.id]: !off })}
+
+                    className={`benefit-row ott-toggle-row ${off ? 'disabled' : ''}`}
+
+                  >
+
+                    <span className={`ott-check ${off ? '' : 'on'}`}>
+
+                      {!off && <span style={{fontSize:'14px',fontWeight:700,lineHeight:1}}>✓</span>}
+
+                    </span>
+
+                    <span className="font-semibold flex-1 ott-name-label">{b.name}</span>
+
+                    <span className="text-[10px] mono uppercase tracking-wider text-warmgray">
+
+                      {b.duration === 'lifetime' ? t('lifetime') : b.duration.replace('M', t('suffix_m'))}
+
+                    </span>
+
+                    <span className="text-airtelDeep font-bold tabular text-sm">{fmt(b.value)}/mo</span>
+
+                  </div>
+
+                );
+
+              })}
+
+            </div>
+
+            {/* Effective benefits summary, only if some are toggled off */}
+
+            {enabledOttCount < oap.benefits.length && (
+
+              <div className="mt-3 p-3 bg-cream2 border border-ink/10 rounded-md flex items-baseline justify-between flex-wrap gap-2">
+
+                <div>
+
+                  <div className="text-[10px] mono uppercase tracking-wider text-warmgray">{t('ott_effective')}</div>
+
+                  <div className="text-2xl font-bold tabular text-airtelDeep mt-0.5">{fmt(enabledOttValue)}<span className="text-sm text-warmgray font-normal ml-1">/mo</span></div>
+
+                </div>
+
+                <div className="text-xs text-warmgray">{enabledOttCount} {t('ott_of')} {oap.benefits.length} {t('ott_kept')}</div>
+
+              </div>
+
+            )}
+
+          </div>
+
+        )}
+
+
+
+        {/* Actions */}
+
+        {!submitted ? (
+
+          <>
+
+            <div className="mt-8 flex flex-wrap gap-3 no-print">
+
+              <button
+
+                onClick={submitToSheet}
+
+                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim()}
+
+                className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+
+              >
+
+                {submitting ? (
+
+                  <>⏳ {t('submitting')}</>
+
+                ) : (
+
+                  <>📤 {t('submit_btn')}</>
+
+                )}
+
+              </button>
+
+              <button
+
+                onClick={reset}
+
+                className="px-5 py-3 border border-ink/20 rounded-md font-semibold text-sm hover:bg-cream2 transition"
+
+              >
+
+                ↻ {t('reset')}
+
+              </button>
+
+            </div>
+
+          </>
+
+        ) : (
+
+          <div className="no-print mt-8 bg-sage/10 border-2 border-sage rounded-lg p-5">
+
+            <div className="flex items-center gap-2 text-sage font-bold text-base mb-2">
+
+              <span className="text-2xl">✓</span>
+
+              <span>{t('submitted_msg')}</span>
+
+            </div>
+
+            <div className="flex flex-wrap gap-3 mt-4">
+
+              <button
+
+                onClick={() => window.print()}
+
+                className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition flex items-center gap-2"
+
+              >
+
+                📄 {t('save_pdf_btn')}
+
+              </button>
+
+              <button
+
+                onClick={reset}
+
+                className="px-5 py-3 border border-ink/20 rounded-md font-semibold text-sm hover:bg-cream2 transition"
+
+              >
+
+                ↻ {t('reset')}
+
+              </button>
+
+            </div>
+
+            <p className="text-[12px] text-warmgray italic mt-3">{t('screenshot_hint')}</p>
+
+          </div>
+
+        )}
+
+      </section>
+
+
+
+      <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
+
+        One Airtel · v5 · per-SIM × count · DTH-aware · GST inclusive
+
+      </footer>
+
+
+
+    </div>
+
+  );
+
+}
+
+
+
+/* ============================================================
+
+   CONNECTION ROW (one for Mobile, WiFi, TV — has Airtel + Others)
+
+   ============================================================ */
+
+
+
+function ConnRow({ label, airtelRow, othersRow, sideAirtel, sideOthers, onUpdate, onToggleGst, airtelKey, othersKey }) {
+
+  return (
+
+    <div className="conn-row">
+
+      <div className="conn-cat">{label}</div>
+
+      <div className="conn-sides">
+
+        <SubRow side="a" sideLabel={sideAirtel} row={airtelRow} onUpdate={onUpdate} accent="airtel"
+
+          onToggleGst={() => onToggleGst(airtelKey)} />
+
+        <SubRow side="o" sideLabel={sideOthers} row={othersRow} onUpdate={onUpdate}
+
+          onToggleGst={() => onToggleGst(othersKey)} />
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+
+function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
+
+  const base = (parseFloat(row.count) || 0) * (parseFloat(row.perMonth) || 0);
+
+  const total = row.gst ? base * 1.18 : base;
+
+  const hasValues = base > 0;
+
+  return (
+
+    <div className="conn-subrow">
+
+      <div className={`label-side ${accent === 'airtel' ? 'text-airtelDeep' : ''}`}>{sideLabel}</div>
+
+      <input
+
+        type="number"
+
+        inputMode="numeric"
+
+        placeholder="0"
+
+        value={row.count}
+
+        onChange={e => onUpdate(side, 'count', e.target.value)}
+
+      />
+
+      <input
+
+        type="number"
+
+        inputMode="decimal"
+
+        placeholder="₹"
+
+        value={row.perMonth}
+
+        onChange={e => onUpdate(side, 'perMonth', e.target.value)}
+
+      />
+
+      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'3px'}}>
+
+        <div className={`total-cell ${total === 0 ? 'zero' : ''}`}>
+
+          {total > 0 ? fmt(total) : '—'}
+
+        </div>
+
+        {hasValues && (
+
+          <button
+
+            type="button"
+
+            onClick={onToggleGst}
+
+            title={row.gst ? 'Remove GST' : 'Add 18% GST'}
+
+            style={{
+
+              fontSize:'9px',
+
+              fontFamily:'ui-monospace,monospace',
+
+              fontWeight:700,
+
+              letterSpacing:'0.06em',
+
+              textTransform:'uppercase',
+
+              padding:'1px 5px',
+
+              borderRadius:'3px',
+
+              border: row.gst ? '1px solid #BB0E1F' : '1px solid rgba(26,23,20,0.2)',
+
+              background: row.gst ? '#BB0E1F' : 'transparent',
+
+              color: row.gst ? '#FAF6EE' : '#6B5F52',
+
+              cursor:'pointer',
+
+              transition:'all 0.15s ease',
+
+              whiteSpace:'nowrap',
+
+            }}
+
+          >
+
+            {row.gst ? '+GST ✓' : '+GST'}
+
+          </button>
+
+        )}
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+
+
+
+</body>
+
+</html>
