@@ -147,6 +147,46 @@ window.tailwind.config = {
     gap: 8px;
     align-items: center;
   }
+/* Stepper controls for "How Many" column */
+  .stepper-ctrl {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(26,23,20,0.25);
+    border-radius: 4px;
+    background: white;
+    overflow: hidden;
+  }
+  .stepper-ctrl:focus-within {
+    border-color: #BB0E1F;
+    box-shadow: 0 0 0 2px rgba(187,14,31,0.15);
+  }
+  .stepper-btn {
+    background: #F1ECE2;
+    border: none;
+    padding: 7px 12px;
+    color: #1A1714;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .stepper-btn:hover { background: #E8E0D2; }
+  .stepper-ctrl input {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    text-align: center;
+    padding: 7px 4px !important;
+  }
+  /* Hide native arrows inside the number input */
+  .stepper-ctrl input::-webkit-outer-spin-button,
+  .stepper-ctrl input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .stepper-ctrl input[type=number] {
+    -moz-appearance: textfield;
+  }
   @media (max-width: 640px) {
     .conn-header { grid-template-columns: 60px 1fr 1fr 80px; gap: 6px; padding: 8px 10px; font-size: 9px; }
     .conn-header .header-cat-cell { display: none; }
@@ -1422,16 +1462,40 @@ function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
   const base = (parseFloat(row.count) || 0) * (parseFloat(row.perMonth) || 0);
   const total = row.gst ? base * 1.18 : base;
   const hasValues = base > 0;
+
+  // Handlers for the +/- buttons
+  const handleDecrement = () => {
+    const current = parseInt(row.count) || 0;
+    if (current > 1) {
+      onUpdate(side, 'count', (current - 1).toString());
+    } else {
+      onUpdate(side, 'count', ''); // Clear to empty string to show "0" placeholder
+    }
+  };
+
+  const handleIncrement = () => {
+    const current = parseInt(row.count) || 0;
+    onUpdate(side, 'count', (current + 1).toString());
+  };
+
   return (
     <div className="conn-subrow">
       <div className={`label-side ${accent === 'airtel' ? 'text-airtelDeep' : ''}`}>{sideLabel}</div>
-      <input
-        type="number"
-        inputMode="numeric"
-        placeholder="0"
-        value={row.count}
-        onChange={e => onUpdate(side, 'count', e.target.value)}
-      />
+      
+      {/* 1. Updated 'How Many' column with +/- stepper */}
+      <div className="stepper-ctrl">
+        <button type="button" className="stepper-btn" onClick={handleDecrement} tabIndex="-1">−</button>
+        <input
+          type="number"
+          inputMode="numeric"
+          placeholder="0"
+          value={row.count}
+          onChange={e => onUpdate(side, 'count', e.target.value)}
+        />
+        <button type="button" className="stepper-btn" onClick={handleIncrement} tabIndex="-1">+</button>
+      </div>
+
+      {/* 2. Amount column (unchanged) */}
       <input
         type="number"
         inputMode="decimal"
@@ -1439,7 +1503,9 @@ function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
         value={row.perMonth}
         onChange={e => onUpdate(side, 'perMonth', e.target.value)}
       />
-      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'3px'}}>
+      
+      {/* 3. Total and explicit GST toggle update */}
+      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'4px'}}>
         <div className={`total-cell ${total === 0 ? 'zero' : ''}`}>
           {total > 0 ? fmt(total) : '—'}
         </div>
@@ -1454,17 +1520,18 @@ function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
               fontWeight:700,
               letterSpacing:'0.06em',
               textTransform:'uppercase',
-              padding:'1px 5px',
-              borderRadius:'3px',
-              border: row.gst ? '1px solid #BB0E1F' : '1px solid rgba(26,23,20,0.2)',
-              background: row.gst ? '#BB0E1F' : 'transparent',
-              color: row.gst ? '#FAF6EE' : '#6B5F52',
+              padding:'4px 8px',
+              borderRadius:'4px',
+              border: row.gst ? '1px solid #BB0E1F' : '1px solid rgba(26,23,20,0.25)',
+              background: row.gst ? '#BB0E1F' : '#FAF6EE',
+              color: row.gst ? '#FAF6EE' : '#1A1714',
               cursor:'pointer',
               transition:'all 0.15s ease',
               whiteSpace:'nowrap',
             }}
           >
-            {row.gst ? '+GST ✓' : '+GST'}
+            {/* Extremely clear phrasing to avoid confusion */}
+            {row.gst ? 'GST Added ✕' : '+ Add GST'}
           </button>
         )}
       </div>
