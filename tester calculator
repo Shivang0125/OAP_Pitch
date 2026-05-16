@@ -1,2957 +1,1513 @@
 <!DOCTYPE html>
-
-
-
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<title>XFE Fleet Tracker</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #0a0a0a;
+  color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+button, input, select { font: inherit; color: inherit; }
+button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.tabular { font-variant-numeric: tabular-nums; }
 
-<meta name="theme-color" content="#BB0E1F">
+#app { max-width: 1400px; margin: 0 auto; padding: 24px; }
 
-<title>One Airtel Calculator</title>
-
-
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-
-
-
-<script>
-
-window.tailwind = window.tailwind || {};
-
-window.tailwind.config = {
-
-  theme: {
-
-    extend: {
-
-      colors: {
-
-        cream:    '#FAF6EE',
-
-        cream2:   '#F1ECE2',
-
-        cream3:   '#E8E0D2',
-
-        ink:      '#1A1714',
-
-        warmgray: '#6B5F52',
-
-        airtel:   '#E40523',
-
-        airtelDeep: '#BB0E1F',
-
-        gold:     '#B89968',
-
-        sage:     '#5C7C57',
-
-      },
-
-      fontFamily: {
-
-        sans: ['"Plus Jakarta Sans"','system-ui','sans-serif'],
-
-        mono: ['"JetBrains Mono"','monospace'],
-
-      }
-
-    }
-
-  }
-
+/* ========= HEADER ========= */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header-left h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-left h1 .live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FF4D4D;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.header-left .sub {
+  font-size: 13px;
+  color: #888;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.live-pill {
+  background: rgba(74,222,128,0.12);
+  border: 1px solid rgba(74,222,128,0.3);
+  color: #4ADE80;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.live-pill.error {
+  background: rgba(248,113,113,0.12);
+  border-color: rgba(248,113,113,0.3);
+  color: #F87171;
 }
 
-</script>
-
-
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-
-
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-
-
-
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-
-
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-
-
-<style>
-
-  html, body { background: #FAF6EE; color: #1A1714; -webkit-font-smoothing: antialiased; }
-
-  body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Noto Sans Devanagari', sans-serif; }
-
-  body[data-lang="hi"] { font-family: system-ui, -apple-system, 'Noto Sans Devanagari', 'Mangal', 'Plus Jakarta Sans', sans-serif; }
-
-  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-
-  .tabular { font-variant-numeric: tabular-nums; }
-
-
-
-  /* The big step-number indicator on the left side */
-
-  .step-num {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    width: 36px; height: 36px;
-
-    background: #BB0E1F;
-
-    color: #FAF6EE;
-
-    border-radius: 999px;
-
-    font-weight: 700;
-
-    font-size: 16px;
-
-  }
-
-
-
-  /* Connection table — like the pitchbook */
-
-  .conn-table {
-
-    border: 1.5px solid #1A1714;
-
-    border-radius: 6px;
-
-    overflow: hidden;
-
-  }
-
-  .conn-row {
-
-    display: grid;
-
-    grid-template-columns: 140px 1fr;
-
-    border-bottom: 1px solid rgba(26,23,20,0.12);
-
-  }
-
-  .conn-row:last-child { border-bottom: none; }
-
-  .conn-cat {
-
-    background: #F1ECE2;
-
-    padding: 14px 12px;
-
-    font-weight: 600;
-
-    font-size: 14px;
-
-    display: flex;
-
-    align-items: center;
-
-    border-right: 1px solid rgba(26,23,20,0.12);
-
-  }
-
-  .conn-sides {
-
-    display: flex;
-
-    flex-direction: column;
-
-  }
-
-  .conn-subrow {
-
-    display: grid;
-
-    grid-template-columns: 70px 1fr 1fr 100px;
-
-    align-items: center;
-
-    padding: 8px 12px;
-
-    gap: 8px;
-
-    border-bottom: 1px dashed rgba(26,23,20,0.1);
-
-  }
-
-  .conn-subrow:last-child { border-bottom: none; }
-
-  .conn-subrow .label-side {
-
-    font-size: 12px;
-
-    color: #6B5F52;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.06em;
-
-    font-weight: 600;
-
-  }
-
-  .conn-subrow input {
-
-    width: 100%;
-
-    padding: 7px 10px;
-
-    border: 1px solid rgba(26,23,20,0.25);
-
-    border-radius: 4px;
-
-    font-size: 14px;
-
-    background: white;
-
-    font-variant-numeric: tabular-nums;
-
-  }
-
-  .conn-subrow input:focus { outline: none; border-color: #BB0E1F; box-shadow: 0 0 0 2px rgba(187,14,31,0.15); }
-
-  .conn-subrow .total-cell {
-
-    text-align: right;
-
-    font-weight: 700;
-
-    font-size: 15px;
-
-    font-variant-numeric: tabular-nums;
-
-    color: #1A1714;
-
-  }
-
-  .conn-subrow .total-cell.zero { color: rgba(26,23,20,0.3); font-weight: 400; }
-
-
-
-  /* Mobile responsive */
-
-  @media (max-width: 640px) {
-
-    .conn-row { grid-template-columns: 1fr; }
-
-    .conn-cat { border-right: none; border-bottom: 1px solid rgba(26,23,20,0.12); padding: 10px 12px; }
-
-    .conn-subrow { grid-template-columns: 60px 1fr 1fr 80px; padding: 8px 10px; gap: 6px; }
-
-    .conn-subrow .label-side { font-size: 11px; }
-
-    .conn-subrow input { padding: 6px 8px; font-size: 13px; }
-
-  }
-
-
-
-  /* Top-of-table column headers */
-
-  .conn-header {
-
-    display: grid;
-
-    grid-template-columns: 140px 70px 1fr 1fr 100px;
-
-    padding: 10px 12px;
-
-    background: #1A1714;
-
-    color: #FAF6EE;
-
-    font-size: 10px;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.1em;
-
-    font-weight: 600;
-
-    gap: 8px;
-
-    align-items: center;
-
-  }
-
-  @media (max-width: 640px) {
-
-    .conn-header { grid-template-columns: 60px 1fr 1fr 80px; gap: 6px; padding: 8px 10px; font-size: 9px; }
-
-    .conn-header .header-cat-cell { display: none; }
-
-  }
-
-
-
-  /* Plan selector */
-
-  .plan-card {
-
-    border: 2px solid rgba(26,23,20,0.15);
-
-    border-radius: 6px;
-
-    padding: 14px;
-
-    background: white;
-
-    cursor: pointer;
-
-    transition: all 0.15s ease;
-
-  }
-
-  .plan-card:hover { border-color: rgba(26,23,20,0.4); }
-
-  .plan-card.selected {
-
-    border-color: #BB0E1F;
-
-    background: rgba(187,14,31,0.04);
-
-  }
-
-
-
-  /* The huge savings card */
-
-  .savings-stamp {
-
-    background: linear-gradient(135deg, #BB0E1F 0%, #8B0A17 100%);
-
-    color: #FAF6EE;
-
-    border-radius: 12px;
-
-    padding: 32px 24px;
-
-    text-align: center;
-
-    position: relative;
-
-    overflow: hidden;
-
-    box-shadow: 0 8px 24px -8px rgba(187,14,31,0.4);
-
-  }
-
-  .savings-stamp::before {
-
-    content: '';
-
-    position: absolute;
-
-    inset: 0;
-
-    background-image:
-
-      radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1), transparent 50%),
-
-      radial-gradient(circle at 70% 80%, rgba(255,255,255,0.05), transparent 40%);
-
-    pointer-events: none;
-
-  }
-
-  .savings-stamp .inner { position: relative; z-index: 1; }
-
-  .savings-stamp .display {
-
-    font-size: 72px;
-
-    font-weight: 800;
-
-    line-height: 0.95;
-
-    letter-spacing: -0.02em;
-
-    font-variant-numeric: tabular-nums;
-
-  }
-
-  @media (min-width: 641px) {
-
-    .savings-stamp { padding: 44px 32px; }
-
-    .savings-stamp .display { font-size: 96px; }
-
-  }
-
-
-
-  /* Upsell variant */
-
-  .upsell-stamp {
-
-    background: linear-gradient(135deg, #1A1714 0%, #2A2420 100%);
-
-    color: #FAF6EE;
-
-    border-radius: 12px;
-
-    padding: 32px 24px;
-
-    text-align: center;
-
-    position: relative;
-
-    overflow: hidden;
-
-  }
-
-  .upsell-stamp::before {
-
-    content: '';
-
-    position: absolute;
-
-    inset: 0;
-
-    background-image: radial-gradient(circle at 70% 20%, rgba(184,153,104,0.18), transparent 50%);
-
-    pointer-events: none;
-
-  }
-
-  .upsell-stamp .inner { position: relative; z-index: 1; }
-
-  .upsell-stamp .display {
-
-    font-size: 64px;
-
-    font-weight: 800;
-
-    line-height: 0.95;
-
-    color: #B89968;
-
-    font-variant-numeric: tabular-nums;
-
-  }
-
-  @media (min-width: 641px) {
-
-    .upsell-stamp { padding: 44px 32px; }
-
-    .upsell-stamp .display { font-size: 88px; }
-
-  }
-
-
-
-  /* Benefit row */
-
-  .benefit-row {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    padding: 10px 12px;
-
-    background: white;
-
-    border: 1px solid rgba(26,23,20,0.08);
-
-    border-radius: 6px;
-
-  }
-
-
-
-  /* Lang toggle */
-
-  .lang-pill {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    padding: 3px;
-
-    background: rgba(255,255,255,0.9);
-
-    border: 1px solid rgba(26,23,20,0.15);
-
-    border-radius: 999px;
-
-    gap: 2px;
-
-  }
-
-  .lang-pill button {
-
-    padding: 5px 12px;
-
-    font-size: 12px;
-
-    border-radius: 999px;
-
-    font-family: 'JetBrains Mono', monospace;
-
-    font-weight: 600;
-
-    color: #6B5F52;
-
-    transition: all 0.15s ease;
-
-    border: none;
-
-    background: transparent;
-
-    cursor: pointer;
-
-  }
-
-  .lang-pill button.active {
-
-    background: #1A1714;
-
-    color: #FAF6EE;
-
-  }
-
-
-
-  /* Big "Customer pays today" summary tile */
-
-  .summary-tile {
-
-    background: white;
-
-    border: 1.5px solid #1A1714;
-
-    border-radius: 6px;
-
-    padding: 18px 20px;
-
-  }
-
-  .summary-tile.airtel { border-color: #BB0E1F; background: rgba(187,14,31,0.03); }
-
-
-
-  /* Print */
-
-  @media print {
-
-    body { background: white; }
-
-    .no-print { display: none !important; }
-
-    .savings-stamp { background: white !important; color: black !important; border: 2px solid black; box-shadow: none; -webkit-print-color-adjust: exact; }
-
-    .savings-stamp::before { display: none; }
-
-    .savings-stamp .display { color: #BB0E1F; }
-
-    .upsell-stamp { background: white !important; color: black !important; border: 2px solid black; }
-
-    .upsell-stamp::before { display: none; }
-
-  }
-
-
-
-  /* Smooth number transitions */
-
-  .num-shift { transition: color 0.2s ease; }
-
-
-
-  /* Accordion cards for pitch math */
-
-  .accordion-card {
-
-    background: white;
-
-    border: 1.5px solid rgba(26,23,20,0.12);
-
-    border-radius: 8px;
-
-    overflow: hidden;
-
-    transition: border-color 0.18s ease;
-
-  }
-
-  .accordion-card.open { border-color: rgba(26,23,20,0.35); }
-
-  .accordion-header {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    padding: 14px 16px;
-
-    cursor: pointer;
-
-    user-select: none;
-
-    width: 100%;
-
-    text-align: left;
-
-    background: transparent;
-
-    border: none;
-
-    transition: background 0.15s ease;
-
-  }
-
-  .accordion-header:hover { background: rgba(26,23,20,0.03); }
-
-  .accordion-card.open .accordion-header { border-bottom: 1px solid rgba(26,23,20,0.08); }
-
-  .accordion-icon {
-
-    flex-shrink: 0;
-
-    width: 20px; height: 20px;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    color: #6B5F52;
-
-    transition: transform 0.18s ease;
-
-    font-weight: 700;
-
-  }
-
-  .accordion-card.open .accordion-icon { transform: rotate(90deg); color: #BB0E1F; }
-
-  .accordion-body { padding: 16px; background: #FAF6EE; }
-
-  .math-block {
-
-    background: white;
-
-    border-radius: 6px;
-
-    padding: 14px;
-
-    font-family: 'JetBrains Mono', monospace;
-
-    font-size: 13px;
-
-    line-height: 1.7;
-
-    border: 1px dashed rgba(26,23,20,0.15);
-
-    font-variant-numeric: tabular-nums;
-
-  }
-
-  .math-block .math-em { color: #BB0E1F; font-weight: 600; }
-
-  .math-block .math-total { border-top: 1px solid rgba(26,23,20,0.15); margin-top: 6px; padding-top: 8px; font-weight: 700; color: #1A1714; }
-
-  .compare-row {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: baseline;
-
-    padding: 6px 0;
-
-    font-size: 13px;
-
-    border-bottom: 1px dashed rgba(26,23,20,0.08);
-
-  }
-
-  .compare-row:last-child { border-bottom: none; }
-
-  .compare-row .label { color: #6B5F52; }
-
-  .compare-row.highlight .label { color: #1A1714; font-weight: 700; }
-
-  .compare-row .value { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
-
-  .compare-row.highlight .value { color: #BB0E1F; font-weight: 700; }
-
-  .win-pill {
-
-    display: inline-block;
-
-    background: rgba(92,124,87,0.12);
-
-    color: #5C7C57;
-
-    border-left: 3px solid #5C7C57;
-
-    padding: 8px 12px;
-
-    border-radius: 0 4px 4px 0;
-
-    font-size: 12px;
-
-    font-weight: 600;
-
-    margin-top: 12px;
-
-  }
-
-
-
-  /* OTT toggle row */
-
-  .ott-toggle-row {
-
-    cursor: pointer;
-
-    transition: all 0.15s ease;
-
-  }
-
-  .ott-toggle-row.disabled { opacity: 0.4; }
-
-  .ott-toggle-row.disabled .ott-name-label { text-decoration: line-through; }
-
-  .ott-check {
-
-    width: 20px; height: 20px;
-
-    border-radius: 4px;
-
-    border: 1.5px solid #1A1714;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    background: white;
-
-    transition: all 0.15s ease;
-
-    color: transparent;
-
-  }
-
-  .ott-check.on { background: #1A1714; color: #FAF6EE; }
-
-
-
-  /* DTH-included benefit row — always-on, visually distinct */
-
-  .dth-benefit-row {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    padding: 10px 12px;
-
-    background: rgba(92,124,87,0.08);
-
-    border: 1px solid #5C7C57;
-
-    border-radius: 6px;
-
-  }
-
-  .dth-check {
-
-    width: 20px; height: 20px;
-
-    border-radius: 4px;
-
-    background: #5C7C57;
-
-    color: #FAF6EE;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    line-height: 1;
-
-  }
-
+/* ========= FILTERS ========= */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.filter-group .label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  font-weight: 600;
+}
+.filter-select {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #f5f5f5;
+  padding: 8px 32px 8px 12px;
+  border-radius: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 160px;
+  cursor: pointer;
+}
+.filter-select:focus { outline: none; border-color: #555; }
+.refresh-btn {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #f5f5f5;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-end;
+  transition: background 0.15s;
+}
+.refresh-btn:hover { background: #222; }
+.refresh-btn .arrow {
+  display: inline-block;
+  font-size: 14px;
+}
+@keyframes spin-arrow {
+  to { transform: rotate(360deg); }
+}
+.refresh-btn.spinning .arrow {
+  animation: spin-arrow 0.8s linear infinite;
+}
+
+/* ========= KPI CARDS ========= */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+@media (max-width: 720px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.kpi-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 18px;
+}
+.kpi-card .label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.kpi-card .value {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card .value .small {
+  font-size: 18px;
+  color: #555;
+  font-weight: 500;
+}
+.kpi-card .sub {
+  font-size: 12px;
+  color: #888;
+  margin-top: 6px;
+}
+.kpi-card .sub.up { color: #4ADE80; }
+.kpi-card .sub.down { color: #F87171; }
+
+/* ========= MAIN GRID ========= */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+.card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 18px;
+}
+.card-title {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+  font-weight: 700;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
+.side-col { display: flex; flex-direction: column; gap: 16px; }
+.flags-list {
+  max-height: 600px;
+  overflow-y: auto;
+  margin-right: -8px;
+  padding-right: 8px;
+}
+.flags-list::-webkit-scrollbar { width: 6px; }
+.flags-list::-webkit-scrollbar-track { background: transparent; }
+.flags-list::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.flags-list::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* ========= LEADERBOARD ========= */
+.lb-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #2a2a2a;
+  cursor: pointer;
+  transition: background 0.12s ease, padding-left 0.12s ease, padding-right 0.12s ease;
+}
+.lb-row:hover {
+  background: rgba(255,77,77,0.04);
+  padding-left: 6px;
+  padding-right: 6px;
+  margin-left: -6px;
+  margin-right: -6px;
+  border-radius: 6px;
+}
+.lb-row:last-child { border-bottom: 0; }
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2a4a8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.avatar.idle { background: #4a1a1a; color: #F87171; }
+.lb-info { min-width: 0; }
+.lb-name { font-weight: 600; font-size: 14px; }
+.lb-meta {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.lb-tag {
+  background: #2a2a2a;
+  color: #aaa;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.lb-tag.idle { background: rgba(248,113,113,0.15); color: #F87171; }
+.lb-tag.top { background: rgba(74,222,128,0.15); color: #4ADE80; }
+.lb-count {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.lb-count-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.lb-pitchcount {
+  text-align: right;
+  min-width: 60px;
+}
+.lb-lasttime {
+  font-size: 11px;
+  color: #666;
+  text-align: right;
+  min-width: 70px;
+}
+
+/* ========= PLANS BAR ========= */
+.plan-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.plan-row .plan-name {
+  color: #f5f5f5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.plan-row .plan-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #FF4D4D;
+}
+.plan-bar {
+  height: 4px;
+  background: #2a2a2a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+  grid-column: 1 / -1;
+}
+.plan-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF4D4D, #BB0E1F);
+  border-radius: 2px;
+}
+
+/* ========= FLAGS ========= */
+.flag-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #2a2a2a;
+  font-size: 13px;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.flag-row:hover { background: rgba(255,77,77,0.04); }
+.flag-row:last-child { border-bottom: 0; }
+.flag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F87171;
+  flex-shrink: 0;
+}
+.flag-dot.warning { background: #FBBF24; }
+.flag-info { flex: 1; min-width: 0; }
+.flag-name { font-weight: 600; }
+.flag-detail { font-size: 11px; color: #888; margin-top: 2px; }
+.flag-action {
+  font-size: 11px;
+  color: #F87171;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+/* ========= ACTIVITY FEED ========= */
+.activity-card { margin-bottom: 24px; }
+.activity-list {
+  max-height: 460px;
+  overflow-y: auto;
+  margin-right: -8px;
+  padding-right: 8px;
+}
+.activity-list::-webkit-scrollbar { width: 6px; }
+.activity-list::-webkit-scrollbar-track { background: transparent; }
+.activity-list::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.activity-list::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+.activity-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  padding: 11px 8px;
+  border-bottom: 1px solid #2a2a2a;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-radius: 6px;
+}
+.activity-row:hover { background: rgba(255,77,77,0.04); }
+.activity-row:last-child { border-bottom: 0; }
+.activity-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #2a4a8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 10px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.activity-text { font-size: 13px; min-width: 0; }
+.activity-name { font-weight: 600; }
+.activity-detail { color: #888; }
+.activity-plans {
+  color: #ccc;
+  font-size: 12px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activity-time {
+  font-size: 11px;
+  color: #666;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.activity-fresh-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4ADE80;
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: pulse 2s infinite;
+}
+
+/* ========= MODAL ========= */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.modal-backdrop.open {
+  display: flex;
+  opacity: 1;
+}
+.modal {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  max-width: 760px;
+  width: 100%;
+  margin: 40px auto;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.modal-header-info { min-width: 0; flex: 1; }
+.modal-header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.modal-header .meta {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+}
+.modal-close {
+  background: #2a2a2a;
+  color: #aaa;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+}
+.modal-close:hover { background: #3a3a3a; color: #fff; }
+.modal-body {
+  padding: 16px 22px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.modal-body::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* ========= PITCH CARD (inside modal) ========= */
+.pitch-card {
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  background: #0f0f0f;
+}
+.pitch-card:last-child { margin-bottom: 0; }
+.pitch-time {
+  font-size: 11px;
+  color: #888;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pitch-time .ago { color: #555; font-weight: 600; }
+.pitch-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 540px) {
+  .pitch-comparison { grid-template-columns: 1fr; }
+}
+.pitch-side {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.pitch-side.pitched {
+  border-color: rgba(255,77,77,0.25);
+  background: rgba(255,77,77,0.04);
+}
+.pitch-side-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pitch-side.pitched .pitch-side-label { color: #FF6B6B; }
+.pitch-line {
+  font-size: 12px;
+  color: #ddd;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  line-height: 1.7;
+  padding: 1px 0;
+  word-break: break-word;
+}
+.pitch-line.total {
+  border-top: 1px dashed #2a2a2a;
+  margin-top: 4px;
+  padding-top: 6px;
+  color: #fff;
+  font-weight: 700;
+}
+.pitch-line.empty { color: #555; font-style: italic; }
+.pitch-plan-name {
+  font-size: 13px;
+  color: #f5f5f5;
+  font-weight: 600;
+  margin-top: 2px;
+  word-break: break-word;
+}
+.pitch-plan-name + .pitch-plan-name { margin-top: 6px; }
+.pitch-plan-sub {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  margin-top: 1px;
+}
+.pitch-result {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2a;
+  margin-top: 12px;
+  align-items: baseline;
+}
+.pitch-savings {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.pitch-savings.positive { color: #4ADE80; }
+.pitch-savings.negative { color: #FBBF24; }
+.pitch-savings-sub {
+  font-size: 11px;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+.pitch-ott-pill {
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.2);
+  color: #4ADE80;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+@media (max-width: 600px) {
+  .modal { margin: 12px auto; max-height: calc(100vh - 24px); }
+  .modal-header { padding: 16px 16px 14px; }
+  .modal-body { padding: 14px 16px 18px; }
+  .activity-row { grid-template-columns: 24px 1fr auto; padding: 10px 6px; gap: 10px; }
+  .activity-plans { font-size: 11px; }
+}
+
+/* ========= LOADING / EMPTY ========= */
+.empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: #555;
+  font-style: italic;
+  font-size: 13px;
+}
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,10,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100;
+}
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #2a2a2a;
+  border-top-color: #FF4D4D;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  #app { padding: 16px; }
+  .header-left h1 { font-size: 20px; }
+  .kpi-card .value { font-size: 28px; }
+  .lb-row { grid-template-columns: 36px 1fr auto; }
+  .lb-lasttime { display: none; }
+}
 </style>
-
-
-
 </head>
-
 <body>
 
-<div id="root"></div>
+<div id="loading" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div style="color:#888; font-size:13px;">Loading fleet data…</div>
+</div>
 
+<div id="app" style="display:none">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <h1>
+        <span class="live-dot"></span>
+        XFE Fleet Tracker
+      </h1>
+      <div class="sub" id="header-sub">—</div>
+    </div>
+    <div class="header-right">
+      <span class="live-pill" id="status-pill">Live</span>
+    </div>
+  </header>
 
+  <!-- FILTERS -->
+  <div class="filters">
+    <div class="filter-group">
+      <span class="label">View ZSM</span>
+      <select class="filter-select" id="zsm-filter">
+        <option value="all">All ZSMs</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="label">Filter TSM</span>
+      <select class="filter-select" id="tsm-filter">
+        <option value="all">All TSMs</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="label">Date range</span>
+      <select class="filter-select" id="range-filter">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="week">Last 7 days</option>
+        <option value="month">This month</option>
+        <option value="all">All time</option>
+      </select>
+    </div>
+    <button class="refresh-btn" id="refresh-btn">
+      <span class="arrow">↻</span>
+      <span>Refresh</span>
+    </button>
+  </div>
 
-<script type="text/babel" data-presets="env,react">
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="label">XFEs pitching</div>
+      <div class="value tabular"><span id="kpi-active">0</span><span class="small" id="kpi-total">/0</span></div>
+      <div class="sub" id="kpi-active-sub">in range</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Pitches logged</div>
+      <div class="value tabular" id="kpi-pitches">0</div>
+      <div class="sub" id="kpi-pitches-sub">in range</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Adoption (all-time)</div>
+      <div class="value tabular"><span id="kpi-adopted">0</span><span class="small" id="kpi-adopted-total">/0</span></div>
+      <div class="sub" id="kpi-adopted-sub">XFEs ever pitched</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Pitches today</div>
+      <div class="value tabular" id="kpi-today">0</div>
+      <div class="sub" id="kpi-today-sub">across whole fleet</div>
+    </div>
+  </div>
 
-const { useState, useMemo, useEffect } = React;
+  <!-- MAIN GRID: LEADERBOARD + SIDE -->
+  <div class="main-grid">
+    <section class="card">
+      <div class="card-title">XFE Leaderboard <span style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0">— sorted by pitches in range</span></div>
+      <div id="leaderboard"></div>
+    </section>
 
+    <div class="side-col">
+      <section class="card">
+        <div class="card-title">Most pitched plans</div>
+        <div id="plans"></div>
+      </section>
 
+      <section class="card flags-card">
+        <div class="card-title">Flags <span id="flags-count" style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0"></span></div>
+        <div id="flags" class="flags-list"></div>
+      </section>
+    </div>
+  </div>
 
-/* ============================================================
+  <!-- LIVE ACTIVITY FEED -->
+  <section class="card activity-card">
+    <div class="card-title">
+      <span class="activity-fresh-dot"></span>Live activity feed
+      <span style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0">— most recent pitches across the fleet · tap a row to drill in</span>
+    </div>
+    <div id="activity-feed" class="activity-list"></div>
+  </section>
 
-   ✏️ DATA — Plans (edit prices here if they change)
+  <footer style="text-align:center; color:#444; font-size:11px; padding: 24px 0 8px; font-family: ui-monospace, monospace; letter-spacing:0.06em; text-transform:uppercase">
+    Auto-refreshes every 30 seconds · <span id="last-updated">—</span>
+  </footer>
 
-   ============================================================ */
+  <!-- REP DETAIL MODAL -->
+  <div class="modal-backdrop" id="rep-modal" role="dialog" aria-modal="true" aria-labelledby="modal-rep-name">
+    <div class="modal" role="document">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h2 id="modal-rep-name">—</h2>
+          <div class="meta" id="modal-rep-meta">—</div>
+        </div>
+        <button class="modal-close" id="modal-close" aria-label="Close" type="button">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div class="empty">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
 
+<script>
+"use strict";
 
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbzZkGTyqMThsvs1CtK_F90l3nuOtht7ed0hqgcNQVKRmsNX5ETNUa2Xa5ozDFUklChp/exec';
+const POLL_INTERVAL = 30000;
 
-const GST = 1.18;
-
-const OAP_DISCOUNT = 100;
-
-
-
-// Postpaid family plans (base price before GST)
-
-const POSTPAID_PLANS = [
-
-  { id: 'pp_449',  base: 449,  sims: 1, label: 'Individual Lite', subEn: '1 SIM · Xstream Play only', subHi: '1 SIM · सिर्फ Xstream Play' },
-
-  { id: 'pp_549',  base: 549,  sims: 1, label: 'Individual',      subEn: '1 SIM',  subHi: '1 SIM' },
-
-  { id: 'pp_699',  base: 699,  sims: 2, label: 'Family of 2',     subEn: '2 SIMs', subHi: '2 SIM' },
-
-  { id: 'pp_999',  base: 999,  sims: 3, label: 'Family of 3',     subEn: '3 SIMs', subHi: '3 SIM' },
-
-  { id: 'pp_1199', base: 1199, sims: 4, label: 'Family of 4',     subEn: '4 SIMs', subHi: '4 SIM' },
-
-  { id: 'pp_1399', base: 1399, sims: 5, label: 'Family of 5',     subEn: '5 SIMs', subHi: '5 SIM' },
-
-  { id: 'pp_1749', base: 1749, sims: 5, label: 'Premium 5 SIMs',  subEn: '5 SIMs · Netflix Standard', subHi: '5 SIM · Netflix Standard' },
-
-];
-
-
-
-// WiFi plans (base price before GST)
-
-const WIFI_PLANS = [
-
-  { id: 'wifi_499',  base: 499,  speedLabel: '40 Mbps' },
-
-  { id: 'wifi_599',  base: 599,  speedLabel: '30 Mbps'  },
-
-  { id: 'wifi_799',  base: 799,  speedLabel: '100 Mbps' },
-
-  { id: 'wifi_899',  base: 899,  speedLabel: '100 Mbps' },
-
-  { id: 'wifi_1199', base: 1199, speedLabel: '100 Mbps premium' },
-
-  { id: 'wifi_1599', base: 1599, speedLabel: '300 Mbps' },
-
-  { id: 'wifi_3999', base: 3999, speedLabel: '1 Gbps'   },
-
-];
-
-
-
-// Wi-Fi plans that REPLACE customer's DTH / cable bill (all except 499 and 799)
-
-const WIFI_INCLUDES_DTH = new Set(['wifi_599', 'wifi_899', 'wifi_1199', 'wifi_1599', 'wifi_3999']);
-
-
-
-// OTT catalog (monthly value)
-
-const OTT = {
-
-  jiohotstar_super: { name: 'JioHotstar Super', value: 149 },
-
-  netflix_basic:    { name: 'Netflix Basic',    value: 199 },
-
-  netflix_standard: { name: 'Netflix Standard', value: 499 },
-
-  prime:            { name: 'Amazon Prime',     value: 125 },
-
-  apple_tv:         { name: 'Apple TV+',        value: 99  },
-
-  apple_music:      { name: 'Apple Music',      value: 99  },
-
-  google_one:       { name: 'Google One 30GB',  value: 60  },
-
-  zee5:             { name: 'ZEE5',             value: 129 },
-
-  adobe:            { name: 'Adobe Express',    value: 333 },
-
-  xstream:          { name: 'Xstream Play',     value: 149 },
-
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalizePhone = p => String(p || '').replace(/\D/g, '').slice(-10);
+const initials = name => {
+  const parts = String(name || '').trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return '??';
+  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
 };
 
-
-
-// Per-plan OTT inclusions (id => duration label)
-
-const WIFI_OTT = {
-
-  wifi_499:  { adobe: '12M', google_one: '6M' },
-
-  wifi_599:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
-
-  wifi_799:  { google_one: '6M', adobe: '12M' },
-
-  wifi_899:  { jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
-
-  wifi_1199: { netflix_basic: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
-
-  wifi_1599: { netflix_basic: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
-
-  wifi_3999: { netflix_standard: 'lifetime', prime: '12M', apple_tv: 'lifetime', jiohotstar_super: 'lifetime', google_one: '6M', zee5: 'lifetime', adobe: '12M', xstream: 'lifetime' },
-
-};
-
-const POSTPAID_OTT = {
-
-  pp_449:  { xstream: '3M' },
-
-  pp_549:  { jiohotstar_super: '12M', prime: '6M', adobe: '12M', xstream: '3M' },
-
-  pp_699:  { jiohotstar_super: '12M', prime: '6M', google_one: '6M', adobe: '12M', xstream: '3M' },
-
-  pp_999:  { jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
-
-  pp_1199: { jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
-
-  pp_1399: { netflix_basic: '12M', jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
-
-  pp_1749: { netflix_standard: '12M', jiohotstar_super: '12M', prime: '6M', apple_tv: 'lifetime', apple_music: '6M', google_one: '6M', adobe: '12M', xstream: 'lifetime' },
-
-};
-
-
-
-/* ============================================================
-
-   TRANSLATIONS — EN / HI
-
-   ============================================================ */
-
-
-
-const T = {
-
-  en: {
-
-    header_title: 'One Airtel',
-
-    header_sub: 'Sales calculator',
-
-
-
-    step1_title: 'What does the customer pay today?',
-
-    step1_hint: 'Enter what they currently pay every month, like in the pitchbook.',
-
-    col_count: 'How many',
-
-    col_amount: '₹ each / month',
-
-    col_total: 'Total / month',
-
-    cat_mobile: 'Mobile',
-
-    cat_wifi: 'Wi-Fi',
-
-    cat_tv: 'TV (DTH / Cable)',
-
-    cat_entertainment: 'Entertainment (Netflix, JioHotstar, etc.)',
-
-    side_airtel: 'Airtel',
-
-    side_others: 'Others',
-
-    entertainment_label: 'Total monthly spend on all OTT apps',
-
-    today_pays: 'Customer pays today',
-
-    per_month: '/ month',
-
-    per_year: '/ year',
-
-    gst_toggle: 'Customer knows plan price, not bill? Add 18% GST',
-
-    gst_toggle_on: 'Amounts include 18% GST',
-
-    gst_note: 'incl. GST',
-
-
-
-    step2_title: 'Suggest a One Airtel plan',
-
-    step2_hint: 'Pick a postpaid family plan and a Wi-Fi plan. We add 18% GST and take ₹100 off.',
-
-    postpaid_label: 'Postpaid plan',
-
-    wifi_label: 'Wi-Fi plan',
-
-    oap_label: 'On One Airtel',
-
-    oap_disc_note: '₹100/month off — both with Airtel',
-
-    select_a_plan: "Enter the customer's current bills above to see savings",
-
-    wifi_dth_included: 'Includes DTH / Cable TV replacement',
-
-
-
-    step3_savings: 'Congratulations!',
-
-    step3_save: 'You save',
-
-    step3_year: 'every year',
-
-    step3_includes: 'Plus FREE benefits worth',
-
-    step3_includes_2: 'every month',
-
-    step3_freebies: 'Included free with this plan',
-
-    dth_replaces_tv: 'DTH / Cable TV (replaces your current TV bill)',
-
-    dth_included_short: 'Included',
-
-
-
-    step3_upsell_pre: 'Spend just',
-
-    step3_upsell_post: 'more / month',
-
-    step3_upsell_note: 'And get FREE benefits worth',
-
-    step3_upsell_swap: 'every month — more than what you spend extra',
-
-
-
-    print: 'Print for customer',
-
-    reset: 'Reset',
-
-    screenshot_hint: 'Or just take a screenshot of this page — works the same.',
-
-
-
-    // XFE phone + submission
-
-    xfe_section_label: 'Your details (customer will see this)',
-
-    xfe_name_label: 'Your name',
-
-    xfe_name_placeholder: 'Full name',
-
-    xfe_label: 'Your phone number',
-
-    xfe_sublabel: '(customer will see this)',
-
-    xfe_placeholder: '98xxxxxxxx',
-
-    xfe_saved: 'Saved',
-
-    your_rep: 'Your Airtel rep',
-
-    submit_btn: 'Submit pitch',
-
-    submitting: 'Submitting...',
-
-    submitted_msg: 'Submitted! You can now save as PDF or screenshot to share.',
-
-    save_pdf_btn: 'Save as PDF',
-
-    please_enter_phone: 'Please enter your phone number first.',
-
-    please_enter_both: 'Please enter your name and phone number first.',
-
-    submission_error: 'Could not submit. Check internet and try again, or take a screenshot.',
-
-    lifetime: 'For lifetime',
-
-    suffix_m: ' months',
-
-    free: 'FREE',
-
-
-
-    // Pitch math accordions (collapsed by default)
-
-    pitch_math_header: 'Deeper pitch math (tap to expand if useful)',
-
-    persim_title: 'Per-SIM math',
-
-    persim_preview: 'Each SIM works out to',
-
-    persim_lede: "Peel out the Wi-Fi from the bundle. What's left, divided by SIMs, gives the per-SIM cost — the Wi-Fi cancels out, and the ₹100 discount is split across SIMs.",
-
-    persim_vs_label: 'Compare per-SIM:',
-
-    persim_vs_349: '₹349 prepaid (28d → 30d)',
-
-    persim_vs_449pre: '₹449 prepaid (28d → 30d)',
-
-    persim_vs_449pp: '₹449 postpaid + GST',
-
-    persim_this: 'This bundle, per SIM',
-
-    persim_win: 'Cheaper than ₹349 prepaid by',
-
-    wifi_math_title: 'Wi-Fi math',
-
-    wifi_preview: 'Effective Wi-Fi cost',
-
-    wifi_lede: "Anchor on the postpaid (customer keeps their family plan), and the Wi-Fi side absorbs the ₹100 discount. That makes the Wi-Fi rate one of the most aggressive in the market.",
-
-    wifi_vs_label: 'Compare Wi-Fi:',
-
-    wifi_vs_standalone: 'Standalone with GST',
-
-    wifi_this: 'In the bundle',
-
-    wifi_win: 'Effective ₹100 less per month',
-
-    bundle_title: 'Bundle math breakdown',
-
-    bundle_preview: 'Line-by-line: how we got to',
-
-    bundle_wifi_base: 'Wi-Fi base',
-
-    bundle_pp_base: 'Postpaid base',
-
-    bundle_subtotal: 'Subtotal',
-
-    bundle_gst: '× 18% GST',
-
-    bundle_discount: '− One Airtel discount',
-
-    bundle_total: '= Bundle price',
-
-
-
-    // OTT customization
-
-    ott_customize_hint: "Tap to remove an OTT if the customer won't use it. Effective benefit value updates.",
-
-    ott_effective: 'Effective benefits in this pitch',
-
-    ott_of: 'of',
-
-    ott_kept: 'kept',
-
-  },
-
-  hi: {
-
-    header_title: 'One Airtel',
-
-    header_sub: 'Sales calculator',
-
-
-
-    step1_title: 'Customer अभी क्या pay करते हैं?',
-
-    step1_hint: 'जैसे pitchbook में, अभी का monthly खर्चा यहाँ भर दीजिए।',
-
-    col_count: 'कितने हैं',
-
-    col_amount: 'हर एक का ₹ / month',
-
-    col_total: 'Total / month',
-
-    cat_mobile: 'Mobile',
-
-    cat_wifi: 'Wi-Fi',
-
-    cat_tv: 'TV (DTH / Cable)',
-
-    cat_entertainment: 'Entertainment (Netflix, JioHotstar आदि)',
-
-    side_airtel: 'Airtel',
-
-    side_others: 'अन्य',
-
-    entertainment_label: 'सब OTT apps पर monthly कुल खर्चा',
-
-    today_pays: 'अभी देते हैं',
-
-    per_month: '/ महीना',
-
-    per_year: '/ साल',
-
-    gst_toggle: 'Customer को plan price पता है, bill नहीं? 18% GST जोड़ें',
-
-    gst_toggle_on: 'Amounts में 18% GST जोड़ा गया है',
-
-    gst_note: 'GST सहित',
-
-
-
-    step2_title: 'One Airtel का plan suggest कीजिए',
-
-    step2_hint: 'एक postpaid family plan और एक Wi-Fi plan चुनिए। 18% GST जुड़ता है, ₹100 छूट मिलती है।',
-
-    postpaid_label: 'Postpaid plan',
-
-    wifi_label: 'Wi-Fi plan',
-
-    oap_label: 'One Airtel पर',
-
-    oap_disc_note: '₹100/महीना छूट — दोनों Airtel से लेने पर',
-
-    select_a_plan: 'Customer के current bills ऊपर भरिए, savings दिखेगी',
-
-    wifi_dth_included: 'DTH / Cable TV का replacement शामिल है',
-
-
-
-    step3_savings: 'बधाई हो!',
-
-    step3_save: 'बचत',
-
-    step3_year: 'हर साल',
-
-    step3_includes: 'साथ में FREE सुविधाएं — value',
-
-    step3_includes_2: 'हर महीना',
-
-    step3_freebies: 'इस plan में FREE मिलेगा',
-
-    dth_replaces_tv: 'DTH / Cable TV (आपका मौजूदा TV bill replace करता है)',
-
-    dth_included_short: 'शामिल',
-
-
-
-    step3_upsell_pre: 'बस',
-
-    step3_upsell_post: 'ज़्यादा / महीना',
-
-    step3_upsell_note: 'और पाइए FREE benefits जिनकी value है',
-
-    step3_upsell_swap: 'हर महीना — आपके extra खर्चे से ज़्यादा',
-
-
-
-    print: 'Customer के लिए Print करें',
-
-    reset: 'Reset',
-
-    screenshot_hint: 'या इस page का screenshot ले लीजिए — दोनों बराबर हैं।',
-
-
-
-    // XFE phone + submission
-
-    xfe_section_label: 'आपकी details (customer को दिखेगी)',
-
-    xfe_name_label: 'आपका नाम',
-
-    xfe_name_placeholder: 'पूरा नाम',
-
-    xfe_label: 'आपका phone number',
-
-    xfe_sublabel: '(customer को दिखेगा)',
-
-    xfe_placeholder: '98xxxxxxxx',
-
-    xfe_saved: 'Save हो गया',
-
-    your_rep: 'आपके Airtel rep',
-
-    submit_btn: 'Pitch submit करें',
-
-    submitting: 'Submit हो रहा है...',
-
-    submitted_msg: 'Submit हो गया! अब PDF या screenshot ले सकते हैं।',
-
-    save_pdf_btn: 'PDF Save करें',
-
-    please_enter_phone: 'पहले अपना phone number डालिए।',
-
-    please_enter_both: 'पहले अपना नाम और phone number डालिए।',
-
-    submission_error: 'Submit नहीं हो पाया। Internet check करके फिर try करें, या screenshot लीजिए।',
-
-    lifetime: 'हमेशा के लिए',
-
-    suffix_m: ' महीने',
-
-    free: 'FREE',
-
-
-
-    // Pitch math accordions
-
-    pitch_math_header: 'Deeper pitch math (ज़रूरत हो तो tap करके खोलिए)',
-
-    persim_title: 'Per-SIM math',
-
-    persim_preview: 'हर SIM की cost पड़ती है',
-
-    persim_lede: 'Bundle से Wi-Fi निकालिए। बचा हुआ, SIMs में divide करिए — वही per-SIM cost है। Wi-Fi cancel हो जाता है, ₹100 discount SIMs में बंटता है।',
-
-    persim_vs_label: 'Per-SIM compare:',
-
-    persim_vs_349: '₹349 prepaid (28d → 30d)',
-
-    persim_vs_449pre: '₹449 prepaid (28d → 30d)',
-
-    persim_vs_449pp: '₹449 postpaid + GST',
-
-    persim_this: 'इस bundle में, per SIM',
-
-    persim_win: '₹349 prepaid से सस्ता',
-
-    wifi_math_title: 'Wi-Fi math',
-
-    wifi_preview: 'Wi-Fi की effective cost',
-
-    wifi_lede: 'Postpaid पर anchor कीजिए (customer का family plan बना रहता है), Wi-Fi side पर ₹100 discount absorb होता है। इससे Wi-Fi rate market में सबसे sharp हो जाती है।',
-
-    wifi_vs_label: 'Wi-Fi compare:',
-
-    wifi_vs_standalone: 'Standalone GST के साथ',
-
-    wifi_this: 'Bundle में',
-
-    wifi_win: '₹100/महीना कम effective',
-
-    bundle_title: 'Bundle math breakdown',
-
-    bundle_preview: 'Line-by-line: कैसे आया',
-
-    bundle_wifi_base: 'Wi-Fi base',
-
-    bundle_pp_base: 'Postpaid base',
-
-    bundle_subtotal: 'Subtotal',
-
-    bundle_gst: '× 18% GST',
-
-    bundle_discount: '− One Airtel discount',
-
-    bundle_total: '= Bundle की कीमत',
-
-
-
-    // OTT customization
-
-    ott_customize_hint: 'जो OTT customer use नहीं करेगा उसे tap करके हटा दीजिए। Effective benefit value update होगी।',
-
-    ott_effective: 'Pitch में effective benefits',
-
-    ott_of: '/',
-
-    ott_kept: 'रखे',
-
-  },
-
-};
-
-
-
-/* ============================================================
-
-   HELPERS
-
-   ============================================================ */
-
-
-
-const fmt      = n => '₹' + Math.round(n).toLocaleString('en-IN');
-
-const fmtPlain = n => Math.round(n).toLocaleString('en-IN');
-
-const parseNum = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
-
-
-
-function buildOAP(wifiId, postpaidId) {
-
-  const wifi = WIFI_PLANS.find(w => w.id === wifiId);
-
-  const pp   = POSTPAID_PLANS.find(p => p.id === postpaidId);
-
-  if (!wifi || !pp) return null;
-
-  const price = (wifi.base + pp.base) * GST - OAP_DISCOUNT;
-
-  // Merge OTT inclusions, picking longer duration when both have it
-
-  const order = { lifetime: 99, '12M': 12, '6M': 6, '3M': 3, '1M': 1 };
-
-  const wOtt = WIFI_OTT[wifiId] || {};
-
-  const pOtt = POSTPAID_OTT[postpaidId] || {};
-
-  const merged = {};
-
-  for (const k of new Set([...Object.keys(wOtt), ...Object.keys(pOtt)])) {
-
-    const a = wOtt[k], b = pOtt[k];
-
-    merged[k] = (order[a] || 0) >= (order[b] || 0) ? (a || b) : (b || a);
-
+// Field-name resolvers — the Apps Script between the calculator and the dashboard may
+// rename column headers, so we don't assume one exact key. We try the known/likely
+// names first, then fall back to scanning every string field on the pitch object for
+// one whose shape matches a bill breakdown / OAP breakdown.
+
+function _looksLikeBillBreakdown(s) {
+  // Patterns seen in column D: "Mobile Airtel: 2×₹699=₹1398 | ... | TOTAL ₹4211/mo"
+  if (typeof s !== 'string' || s.length < 8) return false;
+  return /TOTAL\s*₹/.test(s) || /×\s*₹\d/.test(s);
+}
+
+function _looksLikeOapBreakdown(s) {
+  // Patterns seen in column H: "₹599 WiFi + ₹699 Postpaid = ₹1532 (with 18% GST) − ₹100 discount = ₹1432/mo"
+  if (typeof s !== 'string' || s.length < 8) return false;
+  return /WiFi.+Postpaid|GST.+discount|₹\d.+\/mo/.test(s) && !_looksLikeBillBreakdown(s);
+}
+
+function getCustomerPaysString(p) {
+  const knownKeys = [
+    'customerCurrentMonthly', 'customerBills', 'currentBills', 'currentMonthly',
+    'customerPays', 'customerCurrentBills', 'customerCurrent', 'billBreakdown',
+    'currentBillBreakdown', 'customerBillBreakdown', 'customerCurrentBill',
+  ];
+  for (const k of knownKeys) {
+    if (p[k] && _looksLikeBillBreakdown(p[k])) return String(p[k]);
+  }
+  // Fallback: scan every key on the pitch object
+  for (const k of Object.keys(p)) {
+    if (_looksLikeBillBreakdown(p[k])) return String(p[k]);
+  }
+  return '';
+}
+
+function getOapBreakdownString(p) {
+  const knownKeys = [
+    'oapMonthlyBreakdown', 'oapBreakdown', 'oapBundle', 'bundleBreakdown',
+    'bundlePrice', 'oapPrice', 'oneAirtelBreakdown',
+  ];
+  for (const k of knownKeys) {
+    if (p[k] && _looksLikeOapBreakdown(p[k])) return String(p[k]);
+  }
+  for (const k of Object.keys(p)) {
+    if (_looksLikeOapBreakdown(p[k])) return String(p[k]);
+  }
+  return '';
+}
+
+function sanityCheck(d) {
+  if (!d || isNaN(d.getTime())) return null;
+  const now = new Date();
+  if (d.getTime() > now.getTime() + 86400000) return null;
+  if (d.getFullYear() < now.getFullYear() - 10) return null;
+  return d;
+}
+
+function parseTimestamp(val) {
+  if (val == null || val === '') return null;
+  if (val instanceof Date) return sanityCheck(val);
+
+  // Numeric (Unix ms or Sheets serial)
+  if (typeof val === 'number') {
+    if (val > 1e10) return sanityCheck(new Date(val)); // Unix ms
+    if (val > 1000 && val < 100000) {
+      return sanityCheck(new Date((val - 25569) * 86400000)); // Sheets serial
+    }
+    return null;
   }
 
-  const benefits = Object.entries(merged)
+  const s = String(val).trim();
+  if (!s) return null;
 
-    .filter(([k]) => OTT[k])
+  // ISO 8601 (e.g. "2026-05-12T10:00:20.000Z")
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return sanityCheck(d);
+  }
 
-    .map(([k, dur]) => ({ id: k, name: OTT[k].name, value: OTT[k].value, duration: dur }))
+  // M/D/YYYY format with optional seconds + optional AM/PM
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(AM|PM|am|pm)?$/);
+  if (m) {
+    const a = +m[1], b = +m[2], y = +m[3];
+    let h = +m[4];
+    const min = +m[5];
+    const sec = +(m[6] || 0);
+    if (m[7]) {
+      const isPM = /pm/i.test(m[7]);
+      if (h === 12) h = isPM ? 12 : 0;
+      else if (isPM) h += 12;
+    }
 
-    .sort((a, b) => b.value - a.value);
+    let day, month;
+    if (a > 12) { day = a; month = b; }
+    else if (b > 12) { day = b; month = a; }
+    else {
+      // Both ≤ 12, ambiguous. Try both, pick the one in the past.
+      const d1 = new Date(y, b - 1, a, h, min, sec);
+      const d2 = new Date(y, a - 1, b, h, min, sec);
+      const now = new Date();
+      const tolerance = 86400000;
+      const ok1 = d1.getTime() <= now.getTime() + tolerance;
+      const ok2 = d2.getTime() <= now.getTime() + tolerance;
+      if (ok1 && !ok2) return sanityCheck(d1);
+      if (ok2 && !ok1) return sanityCheck(d2);
+      if (!ok1 && !ok2) return null;
+      return sanityCheck(Math.abs(now - d1) < Math.abs(now - d2) ? d1 : d2);
+    }
+    return sanityCheck(new Date(y, month - 1, day, h, min, sec));
+  }
 
-  return { wifi, pp, price, benefits, includesDTH: WIFI_INCLUDES_DTH.has(wifiId) };
+  // Last resort: native Date parser
+  const native = new Date(s);
+  if (!isNaN(native.getTime())) {
+    const checked = sanityCheck(native);
+    if (checked) return checked;
+  }
 
+  console.warn('[parseTimestamp] Could not parse:', JSON.stringify(s), 'type:', typeof val);
+  return null;
 }
 
+function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
 
+function inRange(d, range) {
+  if (!d) return range === 'all';
+  const now = new Date();
+  const todayStart = startOfDay(now);
+  if (range === 'today') return d >= todayStart;
+  if (range === 'yesterday') {
+    const yStart = new Date(todayStart); yStart.setDate(yStart.getDate() - 1);
+    return d >= yStart && d < todayStart;
+  }
+  if (range === 'week') {
+    const weekStart = new Date(todayStart); weekStart.setDate(weekStart.getDate() - 7);
+    return d >= weekStart;
+  }
+  if (range === 'month') {
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }
+  return true;
+}
 
-/* ============================================================
+function timeAgo(d) {
+  if (!d) return '';
+  const now = new Date();
+  const ms = now - d;
+  if (ms < 0) return ''; // future date — don't display
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+}
 
-   APP
+function timeOfDay(d) {
+  if (!d) return '—';
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
 
-   ============================================================ */
+// ===== STATE =====
+const state = {
+  pitches: [],
+  reps: [],
+  filters: { zsm: 'all', tsm: 'all', range: 'today' },
+  lastFetch: null,
+  error: null,
+  openRepPhone: null, // when set, the rep detail modal is open for this phone
+};
 
+// ===== FETCH =====
+async function fetchData() {
+  $('#refresh-btn').classList.add('spinning');
+  try {
+    const res = await fetch(ENDPOINT + '?t=' + Date.now()); // bust cache
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    state.pitches = json.pitches || [];
+    state.reps = json.reps || [];
+    state.lastFetch = new Date();
+    state.error = null;
+    $('#status-pill').textContent = 'Live';
+    $('#status-pill').classList.remove('error');
 
+    // Debug: log a sample so we can diagnose parsing issues
+    if (state.pitches.length > 0) {
+      const sample = state.pitches[0];
+      console.log('[DEBUG] First pitch raw:', JSON.stringify(sample));
+      console.log('[DEBUG] timestamp value:', sample.timestamp, '(type:', typeof sample.timestamp, ')');
+      console.log('[DEBUG] parsed timestamp:', parseTimestamp(sample.timestamp));
+      const parseFailures = state.pitches.filter(p => !parseTimestamp(p.timestamp)).length;
+      if (parseFailures > 0) {
+        console.warn(`[DEBUG] ${parseFailures} of ${state.pitches.length} timestamps failed to parse`);
+      }
+    }
+  } catch (e) {
+    console.error('Fetch failed:', e);
+    state.error = e.message;
+    $('#status-pill').textContent = 'Offline';
+    $('#status-pill').classList.add('error');
+  } finally {
+    $('#refresh-btn').classList.remove('spinning');
+    $('#loading').style.display = 'none';
+    $('#app').style.display = 'block';
+    render();
+  }
+}
 
-function App() {
+function getRepByPhone(phone) {
+  const norm = normalizePhone(phone);
+  return state.reps.find(r => normalizePhone(r.mobile) === norm);
+}
 
-  const [lang, setLang] = useState(() => {
-
-    try { return localStorage.getItem('oap_lang') || 'en'; } catch { return 'en'; }
-
-  });
-
-  useEffect(() => {
-
-    try { localStorage.setItem('oap_lang', lang); } catch {}
-
-    document.body.setAttribute('data-lang', lang);
-
-  }, [lang]);
-
-  const t = key => T[lang][key] || T.en[key] || key;
-
-
-
-  // XFE Phone — auto-saved, persists across sessions
-
-  const [xfePhone, setXfePhone] = useState(() => {
-
-    try { return localStorage.getItem('oap_xfe_phone') || ''; } catch { return ''; }
-
-  });
-
-  useEffect(() => {
-
-    try { localStorage.setItem('oap_xfe_phone', xfePhone); } catch {}
-
-  }, [xfePhone]);
-
-
-
-  // XFE Name — auto-saved, persists across sessions
-
-  const [xfeName, setXfeName] = useState(() => {
-
-    try { return localStorage.getItem('oap_xfe_name') || ''; } catch { return ''; }
-
-  });
-
-  useEffect(() => {
-
-    try { localStorage.setItem('oap_xfe_name', xfeName); } catch {}
-
-  }, [xfeName]);
-
-
-
-  // Submission state
-
-  const [submitted, setSubmitted] = useState(false);
-
-  const [submitting, setSubmitting] = useState(false);
-
-
-
-  // STEP 1 inputs — current bills (gst: per-row GST toggle)
-
-  // NOTE: `perMonth` is the per-SIM (per-connection) cost. Row total = count × perMonth.
-
-  // Storage key bumped to v5 to discard any test data entered with the brief "totals" semantics.
-
-  const [bills, setBills] = useState(() => {
-
-    try {
-
-      const saved = localStorage.getItem('oap_bills_v5');
-
-      if (saved) return JSON.parse(saved);
-
-    } catch {}
-
+// ===== COMPUTE =====
+function compute() {
+  // Enrich pitches with rep info
+  const enriched = state.pitches.map(p => {
+    const rep = getRepByPhone(p.xfePhone);
     return {
-
-      mobileAirtel:   { count: '', perMonth: '', gst: false },
-
-      mobileOthers:   { count: '', perMonth: '', gst: false },
-
-      wifiAirtel:     { count: '', perMonth: '', gst: false },
-
-      wifiOthers:     { count: '', perMonth: '', gst: false },
-
-      tvAirtel:       { count: '', perMonth: '', gst: false },
-
-      tvOthers:       { count: '', perMonth: '', gst: false },
-
-      entertainment:  '',
-
+      ...p,
+      timestamp: parseTimestamp(p.timestamp),
+      rep,
+      tsm: rep ? rep.tsm : 'Unknown',
+      zsm: rep ? rep.zsm : 'Unknown',
+      repName: rep ? rep.name : (p.xfeName || 'Unknown rep'),
     };
-
   });
 
-  useEffect(() => {
+  // Sort by timestamp desc
+  enriched.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    try { localStorage.setItem('oap_bills_v5', JSON.stringify(bills)); } catch {}
+  // Apply ZSM + TSM filter
+  const baseFiltered = enriched.filter(p => {
+    if (state.filters.zsm !== 'all' && p.zsm !== state.filters.zsm) return false;
+    if (state.filters.tsm !== 'all' && p.tsm !== state.filters.tsm) return false;
+    return true;
+  });
 
-  }, [bills]);
+  // Apply date range filter
+  const ranged = baseFiltered.filter(p => inRange(p.timestamp, state.filters.range));
 
+  // Relevant reps for current ZSM/TSM filter
+  const relevantReps = state.reps.filter(r => {
+    if (state.filters.zsm !== 'all' && r.zsm !== state.filters.zsm) return false;
+    if (state.filters.tsm !== 'all' && r.tsm !== state.filters.tsm) return false;
+    return true;
+  });
 
+  // Pitches per rep (within range)
+  const pitchesByPhone = {};
+  ranged.forEach(p => {
+    const ph = normalizePhone(p.xfePhone);
+    if (!pitchesByPhone[ph]) pitchesByPhone[ph] = [];
+    pitchesByPhone[ph].push(p);
+  });
 
-  const updateBill = (key, field, value) => {
-
-    if (key === 'entertainment') {
-
-      setBills({ ...bills, entertainment: value });
-
-    } else {
-
-      setBills({ ...bills, [key]: { ...bills[key], [field]: value } });
-
-    }
-
-  };
-
-
-
-  // Toggle GST for a single row
-
-  const toggleRowGst = (key) => {
-
-    setBills({ ...bills, [key]: { ...bills[key], gst: !bills[key].gst } });
-
-  };
-
-
-
-  // STEP 2 — suggested plan
-
-  const [ppId, setPpId] = useState('pp_699');
-
-  const [wifiId, setWifiId] = useState('wifi_599');
-
-
-
-  // OTT toggles — disabledMap[ottId] = true means this OTT is unchecked
-
-  const [ottDisabled, setOttDisabled] = useState({});
-
-
-
-  // Accordion expansion state for pitch-math panels
-
-  const [expanded, setExpanded] = useState({ persim: false, wifi: false, bundle: false });
-
-
-
-  // Reset OTT toggles when plans change (different bundle = different OTTs included)
-
-  useEffect(() => { setOttDisabled({}); }, [ppId, wifiId]);
-
-
-
-  // Compute current bill totals — `perMonth` is the per-SIM (per-connection) cost.
-
-  // GST flag, if on, adds 18% to that row's total.
-
-  const rowTotal = (row) => {
-
-    const base = parseNum(row.count) * parseNum(row.perMonth);
-
-    return row.gst ? base * GST : base;
-
-  };
-
-  const currentMonthly = useMemo(() => {
-
-    const rt = (row) => {
-
-      const base = parseNum(row.count) * parseNum(row.perMonth);
-
-      return row.gst ? base * GST : base;
-
+  // Leaderboard
+  const leaderboard = relevantReps.map(rep => {
+    const ph = normalizePhone(rep.mobile);
+    const pitches = pitchesByPhone[ph] || [];
+    const allRepPitches = baseFiltered.filter(p => normalizePhone(p.xfePhone) === ph);
+    const lastEver = allRepPitches.length ? allRepPitches[0].timestamp : null;
+    return {
+      ...rep,
+      pitchCount: pitches.length,
+      lastPitch: pitches.length ? pitches[0].timestamp : null,
+      lastEverPitch: lastEver,
     };
-
-    return rt(bills.mobileAirtel) + rt(bills.mobileOthers)
-
-         + rt(bills.wifiAirtel)   + rt(bills.wifiOthers)
-
-         + rt(bills.tvAirtel)     + rt(bills.tvOthers)
-
-         + parseNum(bills.entertainment);
-
-  }, [bills]);
-
-
-
-  // TV total — used in savings calc; absorbed into OAP when wifi plan includes DTH
-
-  const tvTotal = useMemo(() => {
-
-    const rt = (row) => {
-
-      const base = parseNum(row.count) * parseNum(row.perMonth);
-
-      return row.gst ? base * GST : base;
-
-    };
-
-    return rt(bills.tvAirtel) + rt(bills.tvOthers);
-
-  }, [bills]);
-
-
-
-  // OAP bundle
-
-  const oap = useMemo(() => buildOAP(wifiId, ppId), [wifiId, ppId]);
-
-  const wifiIncludesDTH = !!(oap && oap.includesDTH);
-
-  const fullOttValue    = useMemo(() => oap ? oap.benefits.reduce((s, b) => s + b.value, 0) : 0, [oap]);
-
-  const enabledOttValue = useMemo(() => oap ? oap.benefits.filter(b => !ottDisabled[b.id]).reduce((s, b) => s + b.value, 0) : 0, [oap, ottDisabled]);
-
-  const oapBenefitsValue = enabledOttValue; // what we show in the pitch (after toggles)
-
-  const enabledOttCount = useMemo(() => oap ? oap.benefits.filter(b => !ottDisabled[b.id]).length : 0, [oap, ottDisabled]);
-
-
-
-  // Per-SIM and Wi-Fi math (for the optional pitch panels)
-
-  const pitchMath = useMemo(() => {
-
-    if (!oap) return null;
-
-    const ppGST = oap.pp.base * GST;
-
-    const wifiGST = oap.wifi.base * GST;
-
-    const perSim = (ppGST - OAP_DISCOUNT) / oap.pp.sims;
-
-    const wifiEffective = wifiGST - OAP_DISCOUNT;
-
-    return { ppGST, wifiGST, perSim, wifiEffective, persimVs349: 374 - perSim };
-
-  }, [oap]);
-
-
-
-  // Savings calc:
-
-  // - If the chosen Wi-Fi plan includes DTH, customer's TV bill goes to zero → it's absorbed
-
-  //   into the bundle, so we drop it from `newMonthly`.
-
-  // - If the chosen Wi-Fi plan does NOT include DTH (wifi_499, wifi_799), customer still
-
-  //   pays their TV bill separately on top of the OAP bundle.
-
-  const newMonthly = oap
-
-    ? oap.price + (wifiIncludesDTH ? 0 : tvTotal)
-
-    : 0;
-
-  const monthlySavings = currentMonthly - newMonthly;
-
-  const yearlySavings = monthlySavings * 12;
-
-  const isPositive = monthlySavings >= 0;
-
-
-
-  const hasInputs = currentMonthly > 0;
-
-
-
-  const reset = () => {
-
-    setBills({
-
-      mobileAirtel:   { count: '', perMonth: '', gst: false },
-
-      mobileOthers:   { count: '', perMonth: '', gst: false },
-
-      wifiAirtel:     { count: '', perMonth: '', gst: false },
-
-      wifiOthers:     { count: '', perMonth: '', gst: false },
-
-      tvAirtel:       { count: '', perMonth: '', gst: false },
-
-      tvOthers:       { count: '', perMonth: '', gst: false },
-
-      entertainment:  '',
-
-    });
-
-    setSubmitted(false);
-
-  };
-
-
-
-  // Build a readable breakdown of customer's current bills
-
-  const buildBillBreakdown = () => {
-
-    const parts = [];
-
-    const row = (label, r) => {
-
-      const c = parseNum(r.count), p = parseNum(r.perMonth);
-
-      if (c > 0 && p > 0) parts.push(`${label}: ${c}×₹${p}${r.gst ? ' +GST' : ''}=₹${Math.round(c*p*(r.gst?GST:1))}`);
-
-    };
-
-    row('Mobile Airtel', bills.mobileAirtel);
-
-    row('Mobile Others', bills.mobileOthers);
-
-    row('WiFi Airtel', bills.wifiAirtel);
-
-    row('WiFi Others', bills.wifiOthers);
-
-    row('TV Airtel', bills.tvAirtel);
-
-    row('TV Others', bills.tvOthers);
-
-    const ent = parseNum(bills.entertainment);
-
-    if (ent > 0) parts.push(`Entertainment: ₹${ent}`);
-
-    return parts.length ? parts.join(' | ') + ` | TOTAL ₹${Math.round(currentMonthly)}/mo` : '';
-
-  };
-
-
-
-  // Submit pitch data to Google Sheet
-
-  const submitToSheet = async () => {
-
-    const phone = xfePhone.trim();
-
-    const name = xfeName.trim();
-
-    if (!phone || !name) {
-
-      alert(t('please_enter_both'));
-
+  }).sort((a, b) => {
+    if (b.pitchCount !== a.pitchCount) return b.pitchCount - a.pitchCount;
+    if (a.lastEverPitch && b.lastEverPitch) return b.lastEverPitch - a.lastEverPitch;
+    if (a.lastEverPitch) return -1;
+    if (b.lastEverPitch) return 1;
+    return 0;
+  });
+
+  // Most pitched plans (postpaid + wifi combo)
+  const planCounts = {};
+  ranged.forEach(p => {
+    const key = `${p.postpaidPlan || '?'} · ${p.wifiPlan || '?'}`;
+    planCounts[key] = (planCounts[key] || 0) + 1;
+  });
+  const topPlans = Object.entries(planCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+  const maxPlan = topPlans[0] ? topPlans[0][1] : 1;
+
+  // Flags — Surface all reps needing attention:
+  // 1. Critical: was active, gone silent 5+ days  → Call now
+  // 2. Urgent: idle 3-4 days                       → Urgent
+  // 3. Warning: idle 2 days                        → Review
+  // 4. Not started: never pitched                  → Onboard
+  const now = new Date();
+  const flags = [];
+  const neverPitchedReps = [];
+  let everPitchedCount = 0;
+  relevantReps.forEach(rep => {
+    const ph = normalizePhone(rep.mobile);
+    const allRepPitches = baseFiltered.filter(p => normalizePhone(p.xfePhone) === ph);
+    if (allRepPitches.length === 0) {
+      neverPitchedReps.push(rep);
+      flags.push({ rep, type: 'never', tierOrder: 4, action: 'Onboard' });
       return;
-
     }
-
-    setSubmitting(true);
-
-    try {
-
-      const ppPlan = POSTPAID_PLANS.find(p => p.id === ppId);
-
-      const wifiPlan = WIFI_PLANS.find(w => w.id === wifiId);
-
-      const payload = {
-
-        xfeName: name,
-
-        xfePhone: phone,
-
-        customerCurrentMonthly: buildBillBreakdown(),
-
-        postpaidPlan: ppPlan ? `₹${ppPlan.base} ${ppPlan.label} (${ppPlan.sims} SIM${ppPlan.sims>1?'s':''})` : '',
-
-        wifiPlan: wifiPlan ? `₹${wifiPlan.base} ${wifiPlan.speedLabel}${wifiIncludesDTH ? ' +DTH' : ''}` : '',
-
-        dthIncluded: wifiIncludesDTH ? 'Yes' : 'No',
-
-        oapMonthlyBreakdown: oap ? `₹${oap.wifi.base} WiFi + ₹${oap.pp.base} Postpaid = ₹${Math.round((oap.wifi.base+oap.pp.base)*GST)} (with 18% GST) − ₹100 discount = ₹${Math.round(oap.price)}/mo${wifiIncludesDTH ? ' (DTH included)' : ''}` : '',
-
-        monthlySavings: Math.round(monthlySavings),
-
-        yearlySavings: Math.round(yearlySavings),
-
-        ottValue: Math.round(oapBenefitsValue),
-
-      };
-
-
-
-      // Use no-cors mode since Apps Script returns opaque response from cross-origin
-
-      await fetch('https://script.google.com/macros/s/AKfycbzZkGTyqMThsvs1CtK_F90l3nuOtht7ed0hqgcNQVKRmsNX5ETNUa2Xa5ozDFUklChp/exec', {
-
-        method: 'POST',
-
-        mode: 'no-cors',
-
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-
-        body: JSON.stringify(payload),
-
-      });
-
-      setSubmitted(true);
-
-    } catch (err) {
-
-      console.error('Submission failed:', err);
-
-      alert(t('submission_error'));
-
-    } finally {
-
-      setSubmitting(false);
-
+    everPitchedCount++;
+    const lastPitch = allRepPitches[0].timestamp;
+    if (!lastPitch) return;
+    const daysSince = Math.floor((now - lastPitch) / (1000 * 60 * 60 * 24));
+    if (daysSince >= 5) {
+      flags.push({ rep, type: 'critical', tierOrder: 1, days: daysSince, lastPitch, action: 'Call now' });
+    } else if (daysSince >= 3) {
+      flags.push({ rep, type: 'urgent', tierOrder: 2, days: daysSince, lastPitch, action: 'Urgent' });
+    } else if (daysSince >= 2) {
+      flags.push({ rep, type: 'warning', tierOrder: 3, days: daysSince, lastPitch, action: 'Review' });
     }
+  });
+  // Sort by tier (critical first, never-pitched last), then by days idle desc within tier
+  flags.sort((a, b) => {
+    if (a.tierOrder !== b.tierOrder) return a.tierOrder - b.tierOrder;
+    return (b.days || 0) - (a.days || 0);
+  });
 
+  // KPI: pitches today (fleet wide, after ZSM/TSM filter)
+  const todayPitches = baseFiltered.filter(p => inRange(p.timestamp, 'today'));
+  const yPitches = baseFiltered.filter(p => inRange(p.timestamp, 'yesterday'));
+
+  const kpis = {
+    xfesActive: Object.keys(pitchesByPhone).length,
+    totalReps: relevantReps.length,
+    totalPitches: ranged.length,
+    avgPitches: Object.keys(pitchesByPhone).length
+      ? (ranged.length / Object.keys(pitchesByPhone).length).toFixed(1)
+      : '0',
+    pitchesToday: todayPitches.length,
+    pitchesYesterday: yPitches.length,
+    adoptedCount: everPitchedCount,
+    neverPitchedCount: neverPitchedReps.length,
   };
 
+  return { enriched, baseFiltered, ranged, leaderboard, topPlans, maxPlan, flags, neverPitchedReps, kpis };
+}
 
+// ===== RENDER =====
+function render() {
+  populateFilters();
+  const c = compute();
 
-  return (
+  // Header sub
+  const today = new Date();
+  let viewLabel = 'All ZSMs · All TSMs';
+  if (state.filters.zsm !== 'all') viewLabel = state.filters.zsm + ' ZSM';
+  if (state.filters.tsm !== 'all') viewLabel += ' · ' + state.filters.tsm + ' TSM';
+  $('#header-sub').textContent = viewLabel + ' · ' + today.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
-    <div className="min-h-screen pb-16">
+  // KPIs
+  $('#kpi-active').textContent = c.kpis.xfesActive;
+  $('#kpi-total').textContent = '/' + c.kpis.totalReps;
+  $('#kpi-active-sub').textContent = state.filters.range === 'today' ? 'pitched today' : 'in selected range';
+  $('#kpi-pitches').textContent = c.kpis.totalPitches;
+  $('#kpi-pitches-sub').textContent = state.filters.range === 'today' ? 'today' : 'in selected range';
+  $('#kpi-adopted').textContent = c.kpis.adoptedCount;
+  $('#kpi-adopted-total').textContent = '/' + c.kpis.totalReps;
+  const pct = c.kpis.totalReps ? Math.round((c.kpis.adoptedCount / c.kpis.totalReps) * 100) : 0;
+  $('#kpi-adopted-sub').textContent = `${pct}% of fleet · ${c.kpis.neverPitchedCount} not started`;
+  $('#kpi-today').textContent = c.kpis.pitchesToday;
+  const delta = c.kpis.pitchesToday - c.kpis.pitchesYesterday;
+  if (delta > 0) {
+    $('#kpi-today-sub').innerHTML = `<span style="color:#4ADE80">▲ +${delta}</span> vs yesterday`;
+  } else if (delta < 0) {
+    $('#kpi-today-sub').innerHTML = `<span style="color:#F87171">▼ ${delta}</span> vs yesterday`;
+  } else {
+    $('#kpi-today-sub').textContent = 'same as yesterday';
+  }
 
+  // Leaderboard
+  if (c.leaderboard.length === 0) {
+    $('#leaderboard').innerHTML = '<div class="empty">No XFEs match the current filter.</div>';
+  } else {
+    // Determine max pitch count for "TOP" tag (only if max > 0 and not everyone is tied)
+    const maxPitches = Math.max(...c.leaderboard.map(r => r.pitchCount), 0);
+    const tiedAtMax = c.leaderboard.filter(r => r.pitchCount === maxPitches).length;
+    const showTopTag = maxPitches > 0 && tiedAtMax < c.leaderboard.length;
 
-
-      {/* HEADER */}
-
-      <header className="bg-white border-b border-ink/10 sticky top-0 z-30 no-print">
-
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-
-          <div className="flex items-center gap-2.5">
-
-            <div className="w-8 h-8 rounded-full bg-airtelDeep flex items-center justify-center">
-
-              <div className="w-2.5 h-2.5 rounded-full bg-cream"></div>
-
+    $('#leaderboard').innerHTML = c.leaderboard.map((rep, i) => {
+      const isIdle = rep.pitchCount === 0;
+      const neverPitched = !rep.lastEverPitch && rep.pitchCount === 0;
+      const isTop = showTopTag && rep.pitchCount === maxPitches;
+      let lastEverLabel = '';
+      if (rep.lastEverPitch) {
+        const tag = timeAgo(rep.lastEverPitch);
+        lastEverLabel = tag ? 'Last pitch ' + tag : '';
+      } else if (rep.pitchCount > 0) {
+        lastEverLabel = 'Time unknown';
+      }
+      let stateTag = '';
+      if (isTop) stateTag = '<span class="lb-tag top">TOP</span>';
+      else if (neverPitched) stateTag = '<span class="lb-tag idle">Not started</span>';
+      else if (isIdle && state.filters.range === 'today') stateTag = '<span class="lb-tag idle">Idle today</span>';
+      return `
+        <div class="lb-row" data-phone="${esc(normalizePhone(rep.mobile))}" role="button" tabindex="0">
+          <span class="avatar ${isIdle ? 'idle' : ''}">${esc(initials(rep.name))}</span>
+          <div class="lb-info">
+            <div class="lb-name">${esc(rep.name || '—')}</div>
+            <div class="lb-meta">
+              <span>${esc(rep.tsm || '—')} TSM</span>
+              ${stateTag}
             </div>
-
-            <div className="leading-tight">
-
-              <div className="text-base font-bold">{t('header_title')}</div>
-
-              <div className="text-[11px] mono uppercase tracking-wider text-warmgray">{t('header_sub')}</div>
-
-            </div>
-
           </div>
-
-          <div className="lang-pill">
-
-            <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
-
-            <button className={lang === 'hi' ? 'active' : ''} onClick={() => setLang('hi')}>हिं</button>
-
+          <div class="lb-pitchcount">
+            <div class="lb-count">${rep.pitchCount}</div>
+            <div class="lb-count-label">pitches</div>
           </div>
-
+          <div class="lb-lasttime">${esc(lastEverLabel)}</div>
         </div>
+      `;
+    }).join('');
+  }
 
-      </header>
-
-
-
-      {/* XFE NAME + PHONE STRIP — auto-saved, visible to customer in savings stamp */}
-
-      <div className="bg-cream2 border-b border-ink/10 no-print">
-
-        <div className="max-w-4xl mx-auto px-4 py-3">
-
-          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
-
-            <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('xfe_section_label')}</div>
-
-            {xfeName.trim() && xfePhone.trim() && (
-
-              <span className="text-[11px] text-sage font-semibold mono">✓ {t('xfe_saved')}</span>
-
-            )}
-
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-
-            <input
-
-              type="text"
-
-              placeholder={t('xfe_name_placeholder')}
-
-              value={xfeName}
-
-              onChange={e => setXfeName(e.target.value)}
-
-              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white text-base font-semibold focus:border-airtelDeep focus:outline-none"
-
-              style={{minHeight:'40px'}}
-
-            />
-
-            <input
-
-              type="tel"
-
-              inputMode="tel"
-
-              placeholder={t('xfe_placeholder')}
-
-              value={xfePhone}
-
-              onChange={e => setXfePhone(e.target.value)}
-
-              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white tabular text-base font-semibold focus:border-airtelDeep focus:outline-none"
-
-              style={{minHeight:'40px'}}
-
-            />
-
-          </div>
-
-        </div>
-
+  // Top plans
+  if (c.topPlans.length === 0) {
+    $('#plans').innerHTML = '<div class="empty">No pitches in range yet.</div>';
+  } else {
+    $('#plans').innerHTML = c.topPlans.map(([name, count]) => `
+      <div class="plan-row">
+        <span class="plan-name">${esc(name)}</span>
+        <span class="plan-count">${count}</span>
+        <div class="plan-bar"><div class="plan-bar-fill" style="width: ${(count / c.maxPlan * 100).toFixed(0)}%"></div></div>
       </div>
-
-
-
-      {/* ============ STEP 1: WHAT THEY PAY TODAY ============ */}
-
-      <section className="max-w-4xl mx-auto px-4 pt-6">
-
-        <div className="flex items-center gap-3 mb-2">
-
-          <span className="step-num">1</span>
-
-          <h2 className="text-xl sm:text-2xl font-bold">{t('step1_title')}</h2>
-
-        </div>
-
-        <p className="text-sm text-warmgray ml-12 mb-4">{t('step1_hint')}</p>
-
-
-
-        <div className="conn-table">
-
-          {/* Header row — only visible on desktop */}
-
-          <div className="conn-header">
-
-            <span className="header-cat-cell">{/* category */}</span>
-
-            <span></span>
-
-            <span>{t('col_count')}</span>
-
-            <span>{t('col_amount')}</span>
-
-            <span className="text-right">{t('col_total')}</span>
-
-          </div>
-
-
-
-          <ConnRow
-
-            label={t('cat_mobile')}
-
-            airtelRow={bills.mobileAirtel}
-
-            othersRow={bills.mobileOthers}
-
-            airtelKey="mobileAirtel" othersKey="mobileOthers"
-
-            sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
-
-            onUpdate={(side, field, v) => updateBill(side === 'a' ? 'mobileAirtel' : 'mobileOthers', field, v)}
-
-            onToggleGst={toggleRowGst}
-
-          />
-
-          <ConnRow
-
-            label={t('cat_wifi')}
-
-            airtelRow={bills.wifiAirtel}
-
-            othersRow={bills.wifiOthers}
-
-            airtelKey="wifiAirtel" othersKey="wifiOthers"
-
-            sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
-
-            onUpdate={(side, field, v) => updateBill(side === 'a' ? 'wifiAirtel' : 'wifiOthers', field, v)}
-
-            onToggleGst={toggleRowGst}
-
-          />
-
-          <ConnRow
-
-            label={t('cat_tv')}
-
-            airtelRow={bills.tvAirtel}
-
-            othersRow={bills.tvOthers}
-
-            airtelKey="tvAirtel" othersKey="tvOthers"
-
-            sideAirtel={t('side_airtel')} sideOthers={t('side_others')}
-
-            onUpdate={(side, field, v) => updateBill(side === 'a' ? 'tvAirtel' : 'tvOthers', field, v)}
-
-            onToggleGst={toggleRowGst}
-
-          />
-
-          {/* Entertainment — single field */}
-
-          <div className="conn-row">
-
-            <div className="conn-cat">{t('cat_entertainment')}</div>
-
-            <div className="conn-sides">
-
-              <div style={{display:'grid',gridTemplateColumns:'1fr 110px',gap:'8px',alignItems:'center',padding:'10px 12px'}}>
-
-                <span className="text-[12px] text-warmgray">{t('entertainment_label')}</span>
-
-                <input
-
-                  type="number"
-
-                  inputMode="decimal"
-
-                  placeholder="₹"
-
-                  value={bills.entertainment}
-
-                  onChange={e => updateBill('entertainment', null, e.target.value)}
-
-                  className="tabular text-right"
-
-                  style={{padding:'7px 10px',border:'1px solid rgba(26,23,20,0.25)',borderRadius:'4px',background:'white',fontSize:'14px'}}
-
-                />
-
-              </div>
-
+    `).join('');
+  }
+
+  // Flags
+  const flagsCountEl = document.getElementById('flags-count');
+  if (c.flags.length === 0) {
+    if (flagsCountEl) flagsCountEl.textContent = '';
+    $('#flags').innerHTML = '<div class="empty">No flags — everyone\'s active.</div>';
+  } else {
+    if (flagsCountEl) flagsCountEl.textContent = `— ${c.flags.length} total`;
+    $('#flags').innerHTML = c.flags.map(f => {
+      const phoneAttr = `data-phone="${esc(normalizePhone(f.rep.mobile))}"`;
+      if (f.type === 'never') {
+        return `
+          <div class="flag-row" ${phoneAttr} role="button" tabindex="0">
+            <span class="flag-dot warning"></span>
+            <div class="flag-info">
+              <div class="flag-name">${esc(f.rep.name)}</div>
+              <div class="flag-detail">${esc(f.rep.tsm)} TSM · Not started yet</div>
             </div>
-
+            <span class="flag-action" style="color:#FBBF24">${esc(f.action)}</span>
+          </div>`;
+      }
+      const dotClass = f.type === 'warning' ? 'warning' : '';
+      const lastLabel = timeAgo(f.lastPitch);
+      return `
+        <div class="flag-row" ${phoneAttr} role="button" tabindex="0">
+          <span class="flag-dot ${dotClass}"></span>
+          <div class="flag-info">
+            <div class="flag-name">${esc(f.rep.name)}</div>
+            <div class="flag-detail">${esc(f.rep.tsm)} TSM · Idle ${f.days} day${f.days > 1 ? 's' : ''}${lastLabel ? ' · Last pitched ' + lastLabel : ''}</div>
           </div>
+          <span class="flag-action">${esc(f.action)}</span>
+        </div>`;
+    }).join('');
+  }
 
-        </div>
+  // Live activity feed — most recent pitches across the fleet (respects ZSM/TSM filters)
+  renderActivityFeed(c.baseFiltered);
 
+  // Wire up clicks on freshly-rendered rows
+  attachRowClicks();
 
+  // If a rep-detail modal is open, refresh its contents with the latest data
+  if (state.openRepPhone) renderRepDetail();
 
-        {/* Today total */}
+  // Footer
+  $('#last-updated').textContent = state.error
+    ? ('Connection error: ' + state.error)
+    : ('Last fetched ' + (state.lastFetch ? timeAgo(state.lastFetch) : '—'));
+}
 
-        <div className="summary-tile mt-4">
+// ===== POPULATE FILTERS =====
+function populateFilters() {
+  // Get unique ZSMs and TSMs
+  const zsms = [...new Set(state.reps.map(r => r.zsm).filter(Boolean))].sort();
+  const tsms = [...new Set(state.reps.filter(r => state.filters.zsm === 'all' || r.zsm === state.filters.zsm).map(r => r.tsm).filter(Boolean))].sort();
 
-          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+  const zsmSel = $('#zsm-filter');
+  const tsmSel = $('#tsm-filter');
 
-            <div className="text-sm font-semibold uppercase tracking-wider mono text-warmgray">{t('today_pays')}</div>
+  // Only repopulate if needed (preserves user selection)
+  if (zsmSel.options.length !== zsms.length + 1) {
+    zsmSel.innerHTML = '<option value="all">All ZSMs</option>' + zsms.map(z => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+    zsmSel.value = state.filters.zsm;
+  }
+  if (tsmSel.options.length !== tsms.length + 1) {
+    tsmSel.innerHTML = '<option value="all">All TSMs</option>' + tsms.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    tsmSel.value = tsms.includes(state.filters.tsm) ? state.filters.tsm : 'all';
+    state.filters.tsm = tsmSel.value;
+  }
+}
 
-            <div className="flex items-baseline gap-4 tabular">
+// ===== ACTIVITY FEED =====
+function renderActivityFeed(pitches) {
+  // Show the 20 most recent pitches that have a parseable timestamp
+  const recent = pitches.filter(p => p.timestamp).slice(0, 20);
+  const now = new Date();
 
-              <div>
+  if (recent.length === 0) {
+    $('#activity-feed').innerHTML = '<div class="empty">No pitches yet for this filter.</div>';
+    return;
+  }
 
-                <span className="text-3xl sm:text-4xl font-bold">{fmt(currentMonthly)}</span>
-
-                <span className="text-warmgray text-sm ml-1">{t('per_month')}</span>
-
-              </div>
-
-              <div className="text-warmgray text-sm">
-
-                <span className="text-base font-semibold text-ink">{fmt(currentMonthly * 12)}</span>
-
-                <span className="ml-1">{t('per_year')}</span>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-
-      {/* ============ STEP 2: SUGGEST A PLAN ============ */}
-
-      <section className="max-w-4xl mx-auto px-4 pt-10">
-
-        <div className="flex items-center gap-3 mb-2">
-
-          <span className="step-num">2</span>
-
-          <h2 className="text-xl sm:text-2xl font-bold">{t('step2_title')}</h2>
-
-        </div>
-
-        <p className="text-sm text-warmgray ml-12 mb-4">{t('step2_hint')}</p>
-
-
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-
+  $('#activity-feed').innerHTML = recent.map(p => {
+    const phone = normalizePhone(p.xfePhone);
+    const isFresh = (now - p.timestamp) < 5 * 60 * 1000; // < 5 min old
+    const pp = p.postpaidPlan || '—';
+    const wf = p.wifiPlan || '—';
+    const plansLine = `${pp} · ${wf}`;
+    return `
+      <div class="activity-row" data-phone="${esc(phone)}" role="button" tabindex="0">
+        <span class="activity-avatar">${esc(initials(p.repName))}</span>
+        <div class="activity-text">
           <div>
-
-            <div className="text-[11px] uppercase tracking-wider mono text-warmgray mb-2 font-semibold">{t('postpaid_label')}</div>
-
-            <select
-
-              value={ppId}
-
-              onChange={e => setPpId(e.target.value)}
-
-              className="w-full p-3 border-2 border-ink/15 rounded-md bg-white text-base font-medium focus:border-airtelDeep focus:outline-none"
-
-            >
-
-              {POSTPAID_PLANS.map(p => (
-
-                <option key={p.id} value={p.id}>
-
-                  ₹{p.base} — {p.label}
-
-                </option>
-
-              ))}
-
-            </select>
-
-            <div className="text-[11px] text-warmgray mt-1.5">{POSTPAID_PLANS.find(p=>p.id===ppId)?.[lang==='hi'?'subHi':'subEn']}</div>
-
+            ${isFresh ? '<span class="activity-fresh-dot"></span>' : ''}
+            <span class="activity-name">${esc(p.repName)}</span>
+            <span class="activity-detail"> · ${esc(p.tsm || '—')} TSM</span>
           </div>
-
-
-
-          <div>
-
-            <div className="text-[11px] uppercase tracking-wider mono text-warmgray mb-2 font-semibold">{t('wifi_label')}</div>
-
-            <select
-
-              value={wifiId}
-
-              onChange={e => setWifiId(e.target.value)}
-
-              className="w-full p-3 border-2 border-ink/15 rounded-md bg-white text-base font-medium focus:border-airtelDeep focus:outline-none"
-
-            >
-
-              {WIFI_PLANS.map(w => (
-
-                <option key={w.id} value={w.id}>
-
-                  ₹{w.base} — {w.speedLabel}{WIFI_INCLUDES_DTH.has(w.id) ? ' + DTH' : ''}
-
-                </option>
-
-              ))}
-
-            </select>
-
-            {wifiIncludesDTH && (
-
-              <div className="text-[11px] text-sage mt-1.5 font-semibold">✓ {t('wifi_dth_included')}</div>
-
-            )}
-
-          </div>
-
+          <div class="activity-plans">${esc(plansLine)}</div>
         </div>
-
-
-
-        <div className="summary-tile airtel">
-
-          <div className="text-[11px] text-airtelDeep mono uppercase tracking-wider mb-2 font-semibold">{t('oap_disc_note')}</div>
-
-          <div className="flex items-baseline justify-between gap-3 flex-wrap">
-
-            <div className="text-sm font-semibold uppercase tracking-wider mono text-warmgray">{t('oap_label')}</div>
-
-            <div className="flex items-baseline gap-4 tabular">
-
-              <div>
-
-                <span className="text-3xl sm:text-4xl font-bold text-airtelDeep">{fmt(oap ? oap.price : 0)}</span>
-
-                <span className="text-warmgray text-sm ml-1">{t('per_month')}</span>
-
-              </div>
-
-              <div className="text-warmgray text-sm">
-
-                <span className="text-base font-semibold text-ink">{fmt(oap ? oap.price * 12 : 0)}</span>
-
-                <span className="ml-1">{t('per_year')}</span>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-
-      {/* ============ OPTIONAL PITCH MATH (collapsed) ============ */}
-
-      {oap && pitchMath && (
-
-        <section className="max-w-4xl mx-auto px-4 pt-6 no-print">
-
-          <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold mb-3 ml-12">{t('pitch_math_header')}</div>
-
-
-
-          <div className="flex flex-col gap-2 ml-12">
-
-
-
-            {/* Per-SIM accordion */}
-
-            <div className={`accordion-card ${expanded.persim ? 'open' : ''}`}>
-
-              <button className="accordion-header" onClick={() => setExpanded({...expanded, persim: !expanded.persim})}>
-
-                <span className="accordion-icon">▸</span>
-
-                <div className="flex-1">
-
-                  <div className="text-sm font-bold">{t('persim_title')}</div>
-
-                  <div className="text-xs text-warmgray mt-0.5">{t('persim_preview')} <span className="text-airtelDeep font-bold tabular">{fmt(pitchMath.perSim)}</span> / SIM</div>
-
-                </div>
-
-              </button>
-
-              {expanded.persim && (
-
-                <div className="accordion-body">
-
-                  <p className="text-sm text-warmgray mb-3 leading-relaxed">{t('persim_lede')}</p>
-
-                  <div className="math-block">
-
-                    <div>(<span className="math-em">{oap.pp.base}</span> × 1.18) − <span className="math-em">100</span></div>
-
-                    <div>= {pitchMath.ppGST.toFixed(2)} − 100</div>
-
-                    <div>= {(pitchMath.ppGST - 100).toFixed(2)}</div>
-
-                    <div className="math-total">÷ <span className="math-em">{oap.pp.sims}</span> SIM{oap.pp.sims > 1 ? 's' : ''} = {fmt(pitchMath.perSim)} / SIM</div>
-
-                  </div>
-
-                  <div className="mt-3">
-
-                    <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold mb-2">{t('persim_vs_label')}</div>
-
-                    <div className="compare-row"><span className="label">{t('persim_vs_349')}</span><span className="value">{fmt(374)}</span></div>
-
-                    <div className="compare-row"><span className="label">{t('persim_vs_449pre')}</span><span className="value">{fmt(481)}</span></div>
-
-                    <div className="compare-row"><span className="label">{t('persim_vs_449pp')}</span><span className="value">{fmt(530)}</span></div>
-
-                    <div className="compare-row highlight"><span className="label">{t('persim_this')}</span><span className="value">{fmt(pitchMath.perSim)}</span></div>
-
-                  </div>
-
-                  {pitchMath.persimVs349 > 0 && (
-
-                    <div className="win-pill">✓ {t('persim_win')} {fmt(pitchMath.persimVs349)}</div>
-
-                  )}
-
-                </div>
-
-              )}
-
-            </div>
-
-
-
-            {/* Wi-Fi accordion */}
-
-            <div className={`accordion-card ${expanded.wifi ? 'open' : ''}`}>
-
-              <button className="accordion-header" onClick={() => setExpanded({...expanded, wifi: !expanded.wifi})}>
-
-                <span className="accordion-icon">▸</span>
-
-                <div className="flex-1">
-
-                  <div className="text-sm font-bold">{t('wifi_math_title')}</div>
-
-                  <div className="text-xs text-warmgray mt-0.5">{t('wifi_preview')} <span className="text-airtelDeep font-bold tabular">{fmt(pitchMath.wifiEffective)}</span> / {lang==='hi' ? 'महीना' : 'mo'} ({oap.wifi.speedLabel})</div>
-
-                </div>
-
-              </button>
-
-              {expanded.wifi && (
-
-                <div className="accordion-body">
-
-                  <p className="text-sm text-warmgray mb-3 leading-relaxed">{t('wifi_lede')}</p>
-
-                  <div className="math-block">
-
-                    <div>(<span className="math-em">{oap.wifi.base}</span> × 1.18) − <span className="math-em">100</span></div>
-
-                    <div>= {pitchMath.wifiGST.toFixed(2)} − 100</div>
-
-                    <div className="math-total">= {fmt(pitchMath.wifiEffective)} / {lang==='hi' ? 'महीना' : 'month'}</div>
-
-                  </div>
-
-                  <div className="mt-3">
-
-                    <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold mb-2">{t('wifi_vs_label')}</div>
-
-                    <div className="compare-row"><span className="label">{t('wifi_vs_standalone')} (₹{oap.wifi.base} × 1.18)</span><span className="value">{fmt(pitchMath.wifiGST)}</span></div>
-
-                    <div className="compare-row highlight"><span className="label">{t('wifi_this')}</span><span className="value">{fmt(pitchMath.wifiEffective)}</span></div>
-
-                  </div>
-
-                  <div className="win-pill">✓ {t('wifi_win')}</div>
-
-                </div>
-
-              )}
-
-            </div>
-
-
-
-            {/* Bundle math accordion */}
-
-            <div className={`accordion-card ${expanded.bundle ? 'open' : ''}`}>
-
-              <button className="accordion-header" onClick={() => setExpanded({...expanded, bundle: !expanded.bundle})}>
-
-                <span className="accordion-icon">▸</span>
-
-                <div className="flex-1">
-
-                  <div className="text-sm font-bold">{t('bundle_title')}</div>
-
-                  <div className="text-xs text-warmgray mt-0.5">{t('bundle_preview')} <span className="text-airtelDeep font-bold tabular">{fmt(oap.price)}</span></div>
-
-                </div>
-
-              </button>
-
-              {expanded.bundle && (
-
-                <div className="accordion-body">
-
-                  <div className="math-block">
-
-                    <div><span className="label" style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_wifi_base')}</span> <span className="math-em">{fmt(oap.wifi.base)}</span></div>
-
-                    <div><span className="label" style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_pp_base')}</span> <span className="math-em">{fmt(oap.pp.base)}</span></div>
-
-                    <div style={{borderTop:'1px solid rgba(26,23,20,0.1)',marginTop:'4px',paddingTop:'4px'}}><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_subtotal')}</span> {fmt(oap.wifi.base + oap.pp.base)}</div>
-
-                    <div><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_gst')}</span> {fmt((oap.wifi.base + oap.pp.base) * GST)}</div>
-
-                    <div style={{color:'#BB0E1F'}}><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_discount')}</span> − {fmt(OAP_DISCOUNT)}</div>
-
-                    <div className="math-total"><span style={{display:'inline-block',minWidth:'180px'}}>{t('bundle_total')}</span> {fmt(oap.price)}</div>
-
-                  </div>
-
-                </div>
-
-              )}
-
-            </div>
-
-
-
-          </div>
-
-        </section>
-
-      )}
-
-
-
-      {/* ============ STEP 3: THE SAVINGS ============ */}
-
-      <section className="max-w-4xl mx-auto px-4 pt-10">
-
-        <div className="flex items-center gap-3 mb-4">
-
-          <span className="step-num">3</span>
-
-          <h2 className="text-xl sm:text-2xl font-bold">{lang==='hi' ? 'ये दिखाइए' : 'Show this to the customer'}</h2>
-
-        </div>
-
-
-
-        {!hasInputs ? (
-
-          <div className="bg-cream2 border-2 border-dashed border-ink/15 rounded-lg p-8 text-center text-warmgray italic">
-
-            {t('select_a_plan')}
-
-          </div>
-
-        ) : isPositive ? (
-
-          <div className="savings-stamp">
-
-            <div className="inner">
-
-              <div className="text-[11px] mono uppercase tracking-[0.25em] opacity-80 mb-3">— {t('step3_savings').toUpperCase()}</div>
-
-              <div className="text-lg sm:text-xl opacity-90 mb-2">{t('step3_save')}</div>
-
-              <div className="display">{fmt(yearlySavings)}</div>
-
-              <div className="text-lg sm:text-xl opacity-90 mt-2">{t('step3_year')}</div>
-
-              <div className="mt-4 pt-4 border-t border-white/20 text-sm opacity-80">
-
-                ({fmt(monthlySavings)} {t('per_month')})
-
-              </div>
-
-              {oapBenefitsValue > 0 && (
-
-                <div className="mt-5 pt-5 border-t border-white/20">
-
-                  <div className="text-[12px] uppercase tracking-wider opacity-80 mb-1">{t('step3_includes')}</div>
-
-                  <div className="text-3xl sm:text-4xl font-bold tabular">{fmt(oapBenefitsValue)}<span className="text-base opacity-80 ml-1">{t('step3_includes_2')}</span></div>
-
-                </div>
-
-              )}
-
-              {(xfeName.trim() || xfePhone.trim()) && (
-
-                <div className="mt-5 pt-4 border-t border-white/20 text-sm">
-
-                  <div className="opacity-75 text-[11px] uppercase tracking-wider mb-1">{t('your_rep')}</div>
-
-                  <div className="font-bold text-base tracking-wide">
-
-                    {xfeName.trim() && <span>{xfeName}</span>}
-
-                    {xfeName.trim() && xfePhone.trim() && <span className="opacity-60 mx-2">·</span>}
-
-                    {xfePhone.trim() && <span className="tabular">{xfePhone}</span>}
-
-                  </div>
-
-                </div>
-
-              )}
-
-            </div>
-
-          </div>
-
-        ) : (
-
-          <div className="upsell-stamp">
-
-            <div className="inner">
-
-              <div className="text-[11px] mono uppercase tracking-[0.25em] opacity-70 mb-3 text-gold">— SMART UPGRADE</div>
-
-              <div className="text-lg sm:text-xl opacity-90 mb-2">{t('step3_upsell_pre')}</div>
-
-              <div className="display">{fmt(Math.abs(monthlySavings))}</div>
-
-              <div className="text-lg sm:text-xl opacity-90 mt-2">{t('step3_upsell_post')}</div>
-
-              {oapBenefitsValue > Math.abs(monthlySavings) && (
-
-                <div className="mt-5 pt-5 border-t border-white/15">
-
-                  <div className="text-[12px] uppercase tracking-wider opacity-70 mb-1">{t('step3_upsell_note')}</div>
-
-                  <div className="text-3xl sm:text-4xl font-bold tabular text-gold">{fmt(oapBenefitsValue)}</div>
-
-                  <div className="text-sm opacity-80 mt-1">{t('step3_upsell_swap')}</div>
-
-                </div>
-
-              )}
-
-              {(xfeName.trim() || xfePhone.trim()) && (
-
-                <div className="mt-5 pt-4 border-t border-white/15 text-sm">
-
-                  <div className="opacity-75 text-[11px] uppercase tracking-wider mb-1">{t('your_rep')}</div>
-
-                  <div className="font-bold text-base tracking-wide text-gold">
-
-                    {xfeName.trim() && <span>{xfeName}</span>}
-
-                    {xfeName.trim() && xfePhone.trim() && <span className="opacity-60 mx-2">·</span>}
-
-                    {xfePhone.trim() && <span className="tabular">{xfePhone}</span>}
-
-                  </div>
-
-                </div>
-
-              )}
-
-            </div>
-
-          </div>
-
-        )}
-
-
-
-        {/* Freebies — DTH (if applicable) + OTT list (toggleable) */}
-
-        {oap && (oap.benefits.length > 0 || wifiIncludesDTH) && (
-
-          <div className="mt-6">
-
-            <div className="flex items-baseline justify-between flex-wrap gap-2 mb-2">
-
-              <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('step3_freebies')}</div>
-
-              <div className="text-[11px] text-warmgray italic no-print">{t('ott_customize_hint')}</div>
-
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-
-              {wifiIncludesDTH && (
-
-                <div className="dth-benefit-row">
-
-                  <span className="dth-check">✓</span>
-
-                  <span className="font-semibold flex-1">{t('dth_replaces_tv')}</span>
-
-                  <span className="text-[10px] mono uppercase tracking-wider text-warmgray">{t('lifetime')}</span>
-
-                  <span className="font-bold tabular text-sm" style={{color:'#5C7C57'}}>{t('dth_included_short')}</span>
-
-                </div>
-
-              )}
-
-              {oap.benefits.map(b => {
-
-                const off = !!ottDisabled[b.id];
-
-                return (
-
-                  <div
-
-                    key={b.id}
-
-                    onClick={() => setOttDisabled({ ...ottDisabled, [b.id]: !off })}
-
-                    className={`benefit-row ott-toggle-row ${off ? 'disabled' : ''}`}
-
-                  >
-
-                    <span className={`ott-check ${off ? '' : 'on'}`}>
-
-                      {!off && <span style={{fontSize:'14px',fontWeight:700,lineHeight:1}}>✓</span>}
-
-                    </span>
-
-                    <span className="font-semibold flex-1 ott-name-label">{b.name}</span>
-
-                    <span className="text-[10px] mono uppercase tracking-wider text-warmgray">
-
-                      {b.duration === 'lifetime' ? t('lifetime') : b.duration.replace('M', t('suffix_m'))}
-
-                    </span>
-
-                    <span className="text-airtelDeep font-bold tabular text-sm">{fmt(b.value)}/mo</span>
-
-                  </div>
-
-                );
-
-              })}
-
-            </div>
-
-            {/* Effective benefits summary, only if some are toggled off */}
-
-            {enabledOttCount < oap.benefits.length && (
-
-              <div className="mt-3 p-3 bg-cream2 border border-ink/10 rounded-md flex items-baseline justify-between flex-wrap gap-2">
-
-                <div>
-
-                  <div className="text-[10px] mono uppercase tracking-wider text-warmgray">{t('ott_effective')}</div>
-
-                  <div className="text-2xl font-bold tabular text-airtelDeep mt-0.5">{fmt(enabledOttValue)}<span className="text-sm text-warmgray font-normal ml-1">/mo</span></div>
-
-                </div>
-
-                <div className="text-xs text-warmgray">{enabledOttCount} {t('ott_of')} {oap.benefits.length} {t('ott_kept')}</div>
-
-              </div>
-
-            )}
-
-          </div>
-
-        )}
-
-
-
-        {/* Actions */}
-
-        {!submitted ? (
-
-          <>
-
-            <div className="mt-8 flex flex-wrap gap-3 no-print">
-
-              <button
-
-                onClick={submitToSheet}
-
-                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim()}
-
-                className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-
-              >
-
-                {submitting ? (
-
-                  <>⏳ {t('submitting')}</>
-
-                ) : (
-
-                  <>📤 {t('submit_btn')}</>
-
-                )}
-
-              </button>
-
-              <button
-
-                onClick={reset}
-
-                className="px-5 py-3 border border-ink/20 rounded-md font-semibold text-sm hover:bg-cream2 transition"
-
-              >
-
-                ↻ {t('reset')}
-
-              </button>
-
-            </div>
-
-          </>
-
-        ) : (
-
-          <div className="no-print mt-8 bg-sage/10 border-2 border-sage rounded-lg p-5">
-
-            <div className="flex items-center gap-2 text-sage font-bold text-base mb-2">
-
-              <span className="text-2xl">✓</span>
-
-              <span>{t('submitted_msg')}</span>
-
-            </div>
-
-            <div className="flex flex-wrap gap-3 mt-4">
-
-              <button
-
-                onClick={() => window.print()}
-
-                className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition flex items-center gap-2"
-
-              >
-
-                📄 {t('save_pdf_btn')}
-
-              </button>
-
-              <button
-
-                onClick={reset}
-
-                className="px-5 py-3 border border-ink/20 rounded-md font-semibold text-sm hover:bg-cream2 transition"
-
-              >
-
-                ↻ {t('reset')}
-
-              </button>
-
-            </div>
-
-            <p className="text-[12px] text-warmgray italic mt-3">{t('screenshot_hint')}</p>
-
-          </div>
-
-        )}
-
-      </section>
-
-
-
-      <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-
-        One Airtel · v5 · per-SIM × count · DTH-aware · GST inclusive
-
-      </footer>
-
-
-
-    </div>
-
-  );
-
-}
-
-
-
-/* ============================================================
-
-   CONNECTION ROW (one for Mobile, WiFi, TV — has Airtel + Others)
-
-   ============================================================ */
-
-
-
-function ConnRow({ label, airtelRow, othersRow, sideAirtel, sideOthers, onUpdate, onToggleGst, airtelKey, othersKey }) {
-
-  return (
-
-    <div className="conn-row">
-
-      <div className="conn-cat">{label}</div>
-
-      <div className="conn-sides">
-
-        <SubRow side="a" sideLabel={sideAirtel} row={airtelRow} onUpdate={onUpdate} accent="airtel"
-
-          onToggleGst={() => onToggleGst(airtelKey)} />
-
-        <SubRow side="o" sideLabel={sideOthers} row={othersRow} onUpdate={onUpdate}
-
-          onToggleGst={() => onToggleGst(othersKey)} />
-
+        <span class="activity-time">${esc(timeAgo(p.timestamp))}</span>
       </div>
-
-    </div>
-
-  );
-
+    `;
+  }).join('');
 }
 
+// ===== REP DETAIL MODAL =====
+function openRepDetail(phone) {
+  const norm = normalizePhone(phone);
+  if (!norm) return;
+  state.openRepPhone = norm;
+  renderRepDetail();
+  $('#rep-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
+function closeRepDetail() {
+  state.openRepPhone = null;
+  $('#rep-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
-function SubRow({ side, sideLabel, row, onUpdate, accent, onToggleGst }) {
+function renderRepDetail() {
+  const phone = state.openRepPhone;
+  if (!phone) return;
 
-  const base = (parseFloat(row.count) || 0) * (parseFloat(row.perMonth) || 0);
+  const rep = state.reps.find(r => normalizePhone(r.mobile) === phone);
+  const repName = rep ? rep.name : 'Unknown rep';
+  const repTsm = rep ? rep.tsm : '—';
+  const repZsm = rep ? rep.zsm : '—';
 
-  const total = row.gst ? base * 1.18 : base;
+  // Build enriched + sorted pitches for this rep
+  const repPitches = state.pitches
+    .map(p => ({ ...p, timestamp: parseTimestamp(p.timestamp) }))
+    .filter(p => normalizePhone(p.xfePhone) === phone)
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  const hasValues = base > 0;
+  $('#modal-rep-name').textContent = repName;
+  const pitchWord = repPitches.length === 1 ? 'pitch' : 'pitches';
+  $('#modal-rep-meta').textContent = `${repTsm} TSM · ${repZsm} ZSM · ${repPitches.length} ${pitchWord} all-time · 📱 ${phone}`;
 
-  return (
+  if (repPitches.length === 0) {
+    $('#modal-body').innerHTML = '<div class="empty">No pitches logged yet for this XFE.</div>';
+    return;
+  }
 
-    <div className="conn-subrow">
+  const fmtMoney = n => '₹' + Math.round(n).toLocaleString('en-IN');
 
-      <div className={`label-side ${accent === 'airtel' ? 'text-airtelDeep' : ''}`}>{sideLabel}</div>
+  $('#modal-body').innerHTML = repPitches.map(p => {
+    // Customer's current bills (col D in the sheet). The Apps Script may return this
+    // under `currentBills`, `customerCurrentMonthly`, or another key — use the resolver
+    // so the dashboard stays robust if the script's column names ever change.
+    const paysRaw = getCustomerPaysString(p);
+    const paysParts = paysRaw ? paysRaw.split(' | ').map(s => s.trim()).filter(Boolean) : [];
+    const paysLines = paysParts.map(line => {
+      const isTotal = /^TOTAL/i.test(line);
+      return `<div class="pitch-line${isTotal ? ' total' : ''}">${esc(line)}</div>`;
+    }).join('') || '<div class="pitch-line empty">No bill data recorded</div>';
 
-      <input
+    // OAP pitched (cols E + F)
+    const postpaid = p.postpaidPlan || '—';
+    const wifi = p.wifiPlan || '—';
+    const oapBreakdown = getOapBreakdownString(p);
 
-        type="number"
+    // Numbers
+    const monthlySavings = Number(p.monthlySavings) || 0;
+    const yearlySavings = Number(p.yearlySavings) || 0;
+    const ottValue = Number(p.ottValue) || 0;
+    const isPositive = monthlySavings >= 0;
 
-        inputMode="numeric"
+    // Time labels
+    let dateStr = 'Time unknown';
+    if (p.timestamp) {
+      dateStr = p.timestamp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+              + ' · ' + p.timestamp.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+    const ago = p.timestamp ? timeAgo(p.timestamp) : '';
 
-        placeholder="0"
-
-        value={row.count}
-
-        onChange={e => onUpdate(side, 'count', e.target.value)}
-
-      />
-
-      <input
-
-        type="number"
-
-        inputMode="decimal"
-
-        placeholder="₹"
-
-        value={row.perMonth}
-
-        onChange={e => onUpdate(side, 'perMonth', e.target.value)}
-
-      />
-
-      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'3px'}}>
-
-        <div className={`total-cell ${total === 0 ? 'zero' : ''}`}>
-
-          {total > 0 ? fmt(total) : '—'}
-
+    return `
+      <div class="pitch-card">
+        <div class="pitch-time">
+          <span>${esc(dateStr)}</span>
+          ${ago ? `<span class="ago">${esc(ago)}</span>` : ''}
         </div>
 
-        {hasValues && (
+        <div class="pitch-comparison">
+          <div class="pitch-side">
+            <div class="pitch-side-label">💸 Customer pays today</div>
+            ${paysLines}
+          </div>
+          <div class="pitch-side pitched">
+            <div class="pitch-side-label">🎯 Pitched as One Airtel</div>
+            <div class="pitch-plan-sub">Postpaid</div>
+            <div class="pitch-plan-name">${esc(postpaid)}</div>
+            <div class="pitch-plan-sub" style="margin-top:8px">Wi-Fi</div>
+            <div class="pitch-plan-name">${esc(wifi)}</div>
+            ${oapBreakdown ? `<div class="pitch-line total" style="font-size:11px;margin-top:8px">${esc(oapBreakdown)}</div>` : ''}
+          </div>
+        </div>
 
-          <button
-
-            type="button"
-
-            onClick={onToggleGst}
-
-            title={row.gst ? 'Remove GST' : 'Add 18% GST'}
-
-            style={{
-
-              fontSize:'9px',
-
-              fontFamily:'ui-monospace,monospace',
-
-              fontWeight:700,
-
-              letterSpacing:'0.06em',
-
-              textTransform:'uppercase',
-
-              padding:'1px 5px',
-
-              borderRadius:'3px',
-
-              border: row.gst ? '1px solid #BB0E1F' : '1px solid rgba(26,23,20,0.2)',
-
-              background: row.gst ? '#BB0E1F' : 'transparent',
-
-              color: row.gst ? '#FAF6EE' : '#6B5F52',
-
-              cursor:'pointer',
-
-              transition:'all 0.15s ease',
-
-              whiteSpace:'nowrap',
-
-            }}
-
-          >
-
-            {row.gst ? '+GST ✓' : '+GST'}
-
-          </button>
-
-        )}
-
+        <div class="pitch-result">
+          <div class="pitch-savings ${isPositive ? 'positive' : 'negative'}">
+            ${isPositive ? '✓ Saves' : '▲ Extra'} ${fmtMoney(Math.abs(monthlySavings))}/mo
+          </div>
+          <div class="pitch-savings-sub">
+            ${fmtMoney(Math.abs(yearlySavings))}/year
+          </div>
+          ${ottValue > 0 ? `<span class="pitch-ott-pill">+ ${fmtMoney(ottValue)}/mo OTT benefits</span>` : ''}
+        </div>
       </div>
-
-    </div>
-
-  );
-
+    `;
+  }).join('');
 }
 
+// Attach click handlers to all clickable rows (leaderboard, flags, activity feed)
+function attachRowClicks() {
+  document.querySelectorAll('[data-phone]').forEach(row => {
+    // Avoid double-binding by tagging
+    if (row.__phoneBound) return;
+    row.__phoneBound = true;
+    const open = () => openRepDetail(row.dataset.phone);
+    row.addEventListener('click', open);
+    row.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+  });
+}
 
+// Modal close handlers
+$('#modal-close').addEventListener('click', closeRepDetail);
+$('#rep-modal').addEventListener('click', e => {
+  // Click on the backdrop (outside the modal panel) closes it
+  if (e.target.id === 'rep-modal') closeRepDetail();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.openRepPhone) closeRepDetail();
+});
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+// ===== EVENT HANDLERS =====
+$('#zsm-filter').addEventListener('change', e => {
+  state.filters.zsm = e.target.value;
+  state.filters.tsm = 'all'; // reset TSM when ZSM changes
+  $('#tsm-filter').innerHTML = '<option value="all">All TSMs</option>'; // force repopulate
+  render();
+});
+$('#tsm-filter').addEventListener('change', e => { state.filters.tsm = e.target.value; render(); });
+$('#range-filter').addEventListener('change', e => { state.filters.range = e.target.value; render(); });
+$('#refresh-btn').addEventListener('click', fetchData);
 
+// ===== INIT =====
+fetchData();
+setInterval(fetchData, POLL_INTERVAL);
+
+// Re-render time labels every 15s (without re-fetching)
+setInterval(() => { if (state.lastFetch) render(); }, 15000);
 </script>
 
-
-
 </body>
-
 </html>
