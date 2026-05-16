@@ -150,11 +150,12 @@ window.tailwind.config = {
 /* Stepper controls for "How Many" column */
   .stepper-ctrl {
     display: flex;
-    align-items: center;
+    align-items: stretch; /* Ensures buttons fill the height */
     border: 1px solid rgba(26,23,20,0.25);
     border-radius: 4px;
     background: white;
     overflow: hidden;
+    width: 100%;
   }
   .stepper-ctrl:focus-within {
     border-color: #BB0E1F;
@@ -163,7 +164,11 @@ window.tailwind.config = {
   .stepper-btn {
     background: #F1ECE2;
     border: none;
-    padding: 7px 12px;
+    width: 26px; /* Narrow, fixed width for mobile screens */
+    flex-shrink: 0; /* Prevents the button from being squished */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #1A1714;
     font-weight: 700;
     cursor: pointer;
@@ -171,23 +176,24 @@ window.tailwind.config = {
     user-select: none;
   }
   .stepper-btn:hover { background: #E8E0D2; }
+  
   .stepper-ctrl input {
+    flex: 1; /* Forces the input to claim all leftover space in the middle */
+    min-width: 0; /* Crucial flexbox trick to prevent text overflow */
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     text-align: center;
-    padding: 7px 4px !important;
+    padding: 7px 0 !important; /* Removed side padding so numbers have more room */
+    -moz-appearance: textfield;
   }
+  
   /* Hide native arrows inside the number input */
   .stepper-ctrl input::-webkit-outer-spin-button,
   .stepper-ctrl input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
-  }
-  .stepper-ctrl input[type=number] {
-    -moz-appearance: textfield;
-  }
-  @media (max-width: 640px) {
+  }  @media (max-width: 640px) {
     .conn-header { grid-template-columns: 60px 1fr 1fr 80px; gap: 6px; padding: 8px 10px; font-size: 9px; }
     .conn-header .header-cat-cell { display: none; }
   }
