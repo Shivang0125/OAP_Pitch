@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -870,7 +869,8 @@ function App() {
          + parseNum(bills.entertainment);
   }, [bills]);
 
-  // TV total — used in savings calc; absorbed into OAP when wifi plan includes DTH
+  // TV total — kept around for potential messaging; NOT added to newMonthly.
+  // (See savings-calc note below — the customer drops their old DTH bill in ALL cases.)
   const tvTotal = useMemo(() => {
     const rt = (row) => {
       const base = parseNum(row.count) * parseNum(row.perMonth);
@@ -898,13 +898,14 @@ function App() {
   }, [oap]);
 
   // Savings calc:
-  // - If the chosen Wi-Fi plan includes DTH, customer's TV bill goes to zero → it's absorbed
-  //   into the bundle, so we drop it from `newMonthly`.
-  // - If the chosen Wi-Fi plan does NOT include DTH (wifi_499, wifi_799), customer still
-  //   pays their TV bill separately on top of the OAP bundle.
-  const newMonthly = oap
-    ? oap.price + (wifiIncludesDTH ? 0 : tvTotal)
-    : 0;
+  // One Airtel consolidates the customer onto a single Airtel bill. Their old TV / DTH
+  // bill goes away in BOTH cases:
+  //   - DTH-inclusive Wi-Fi plan (599/899/1199/1599/3999): DTH is bundled into the plan.
+  //   - Non-DTH plan (499, 799): customer is dropping DTH entirely (e.g. moved to a
+  //     smart TV, won't use DTH anymore — otherwise the rep would pick a DTH plan).
+  // Either way, newMonthly is just the OAP price. The customer's old TV bill isn't
+  // carried forward — it's part of the "current spend" that the OAP bundle replaces.
+  const newMonthly = oap ? oap.price : 0;
   const monthlySavings = currentMonthly - newMonthly;
   const yearlySavings = monthlySavings * 12;
   const isPositive = monthlySavings >= 0;
@@ -1439,7 +1440,7 @@ function App() {
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-        One Airtel · v5 · per-SIM × count · DTH-aware · GST inclusive
+        One Airtel · v6 · DTH dropped in savings calc · stepper qty · clearer GST toggle
       </footer>
 
     </div>
