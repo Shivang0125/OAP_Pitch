@@ -232,6 +232,16 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid #2a2a2a;
+  cursor: pointer;
+  transition: background 0.12s ease, padding-left 0.12s ease, padding-right 0.12s ease;
+}
+.lb-row:hover {
+  background: rgba(255,77,77,0.04);
+  padding-left: 6px;
+  padding-right: 6px;
+  margin-left: -6px;
+  margin-right: -6px;
+  border-radius: 6px;
 }
 .lb-row:last-child { border-bottom: 0; }
 .avatar {
@@ -334,7 +344,10 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   border-bottom: 1px solid #2a2a2a;
   font-size: 13px;
   gap: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
 }
+.flag-row:hover { background: rgba(255,77,77,0.04); }
 .flag-row:last-child { border-bottom: 0; }
 .flag-dot {
   width: 8px;
@@ -356,29 +369,273 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 }
 
 /* ========= ACTIVITY FEED ========= */
+.activity-card { margin-bottom: 24px; }
+.activity-list {
+  max-height: 460px;
+  overflow-y: auto;
+  margin-right: -8px;
+  padding-right: 8px;
+}
+.activity-list::-webkit-scrollbar { width: 6px; }
+.activity-list::-webkit-scrollbar-track { background: transparent; }
+.activity-list::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.activity-list::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
 .activity-row {
   display: grid;
-  grid-template-columns: 12px 1fr auto;
-  gap: 14px;
-  padding: 12px 0;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  padding: 11px 8px;
   border-bottom: 1px solid #2a2a2a;
   align-items: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-radius: 6px;
 }
+.activity-row:hover { background: rgba(255,77,77,0.04); }
 .activity-row:last-child { border-bottom: 0; }
-.activity-dot {
-  width: 8px;
-  height: 8px;
+.activity-avatar {
+  width: 28px; height: 28px;
   border-radius: 50%;
-  background: #4ADE80;
+  background: #2a4a8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 10px;
+  color: #fff;
+  flex-shrink: 0;
 }
-.activity-text { font-size: 13px; }
+.activity-text { font-size: 13px; min-width: 0; }
 .activity-name { font-weight: 600; }
 .activity-detail { color: #888; }
+.activity-plans {
+  color: #ccc;
+  font-size: 12px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .activity-time {
   font-size: 11px;
   color: #666;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.activity-fresh-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4ADE80;
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: pulse 2s infinite;
+}
+
+/* ========= MODAL ========= */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.modal-backdrop.open {
+  display: flex;
+  opacity: 1;
+}
+.modal {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  max-width: 760px;
+  width: 100%;
+  margin: 40px auto;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.modal-header-info { min-width: 0; flex: 1; }
+.modal-header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.modal-header .meta {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+}
+.modal-close {
+  background: #2a2a2a;
+  color: #aaa;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+}
+.modal-close:hover { background: #3a3a3a; color: #fff; }
+.modal-body {
+  padding: 16px 22px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.modal-body::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* ========= PITCH CARD (inside modal) ========= */
+.pitch-card {
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  background: #0f0f0f;
+}
+.pitch-card:last-child { margin-bottom: 0; }
+.pitch-time {
+  font-size: 11px;
+  color: #888;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pitch-time .ago { color: #555; font-weight: 600; }
+.pitch-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 540px) {
+  .pitch-comparison { grid-template-columns: 1fr; }
+}
+.pitch-side {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.pitch-side.pitched {
+  border-color: rgba(255,77,77,0.25);
+  background: rgba(255,77,77,0.04);
+}
+.pitch-side-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pitch-side.pitched .pitch-side-label { color: #FF6B6B; }
+.pitch-line {
+  font-size: 12px;
+  color: #ddd;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  line-height: 1.7;
+  padding: 1px 0;
+  word-break: break-word;
+}
+.pitch-line.total {
+  border-top: 1px dashed #2a2a2a;
+  margin-top: 4px;
+  padding-top: 6px;
+  color: #fff;
+  font-weight: 700;
+}
+.pitch-line.empty { color: #555; font-style: italic; }
+.pitch-plan-name {
+  font-size: 13px;
+  color: #f5f5f5;
+  font-weight: 600;
+  margin-top: 2px;
+  word-break: break-word;
+}
+.pitch-plan-name + .pitch-plan-name { margin-top: 6px; }
+.pitch-plan-sub {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  margin-top: 1px;
+}
+.pitch-result {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2a;
+  margin-top: 12px;
+  align-items: baseline;
+}
+.pitch-savings {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.pitch-savings.positive { color: #4ADE80; }
+.pitch-savings.negative { color: #FBBF24; }
+.pitch-savings-sub {
+  font-size: 11px;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+.pitch-ott-pill {
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.2);
+  color: #4ADE80;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+@media (max-width: 600px) {
+  .modal { margin: 12px auto; max-height: calc(100vh - 24px); }
+  .modal-header { padding: 16px 16px 14px; }
+  .modal-body { padding: 14px 16px 18px; }
+  .activity-row { grid-template-columns: 24px 1fr auto; padding: 10px 6px; gap: 10px; }
+  .activity-plans { font-size: 11px; }
 }
 
 /* ========= LOADING / EMPTY ========= */
@@ -517,9 +774,34 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     </div>
   </div>
 
+  <!-- LIVE ACTIVITY FEED -->
+  <section class="card activity-card">
+    <div class="card-title">
+      <span class="activity-fresh-dot"></span>Live activity feed
+      <span style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0">— most recent pitches across the fleet · tap a row to drill in</span>
+    </div>
+    <div id="activity-feed" class="activity-list"></div>
+  </section>
+
   <footer style="text-align:center; color:#444; font-size:11px; padding: 24px 0 8px; font-family: ui-monospace, monospace; letter-spacing:0.06em; text-transform:uppercase">
     Auto-refreshes every 30 seconds · <span id="last-updated">—</span>
   </footer>
+
+  <!-- REP DETAIL MODAL -->
+  <div class="modal-backdrop" id="rep-modal" role="dialog" aria-modal="true" aria-labelledby="modal-rep-name">
+    <div class="modal" role="document">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h2 id="modal-rep-name">—</h2>
+          <div class="meta" id="modal-rep-meta">—</div>
+        </div>
+        <button class="modal-close" id="modal-close" aria-label="Close" type="button">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div class="empty">Loading…</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -537,6 +819,53 @@ const initials = name => {
   if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
   return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
 };
+
+// Field-name resolvers — the Apps Script between the calculator and the dashboard may
+// rename column headers, so we don't assume one exact key. We try the known/likely
+// names first, then fall back to scanning every string field on the pitch object for
+// one whose shape matches a bill breakdown / OAP breakdown.
+
+function _looksLikeBillBreakdown(s) {
+  // Patterns seen in column D: "Mobile Airtel: 2×₹699=₹1398 | ... | TOTAL ₹4211/mo"
+  if (typeof s !== 'string' || s.length < 8) return false;
+  return /TOTAL\s*₹/.test(s) || /×\s*₹\d/.test(s);
+}
+
+function _looksLikeOapBreakdown(s) {
+  // Patterns seen in column H: "₹599 WiFi + ₹699 Postpaid = ₹1532 (with 18% GST) − ₹100 discount = ₹1432/mo"
+  if (typeof s !== 'string' || s.length < 8) return false;
+  return /WiFi.+Postpaid|GST.+discount|₹\d.+\/mo/.test(s) && !_looksLikeBillBreakdown(s);
+}
+
+function getCustomerPaysString(p) {
+  const knownKeys = [
+    'customerCurrentMonthly', 'customerBills', 'currentBills', 'currentMonthly',
+    'customerPays', 'customerCurrentBills', 'customerCurrent', 'billBreakdown',
+    'currentBillBreakdown', 'customerBillBreakdown', 'customerCurrentBill',
+  ];
+  for (const k of knownKeys) {
+    if (p[k] && _looksLikeBillBreakdown(p[k])) return String(p[k]);
+  }
+  // Fallback: scan every key on the pitch object
+  for (const k of Object.keys(p)) {
+    if (_looksLikeBillBreakdown(p[k])) return String(p[k]);
+  }
+  return '';
+}
+
+function getOapBreakdownString(p) {
+  const knownKeys = [
+    'oapMonthlyBreakdown', 'oapBreakdown', 'oapBundle', 'bundleBreakdown',
+    'bundlePrice', 'oapPrice', 'oneAirtelBreakdown',
+  ];
+  for (const k of knownKeys) {
+    if (p[k] && _looksLikeOapBreakdown(p[k])) return String(p[k]);
+  }
+  for (const k of Object.keys(p)) {
+    if (_looksLikeOapBreakdown(p[k])) return String(p[k]);
+  }
+  return '';
+}
 
 function sanityCheck(d) {
   if (!d || isNaN(d.getTime())) return null;
@@ -660,6 +989,7 @@ const state = {
   filters: { zsm: 'all', tsm: 'all', range: 'today' },
   lastFetch: null,
   error: null,
+  openRepPhone: null, // when set, the rep detail modal is open for this phone
 };
 
 // ===== FETCH =====
@@ -832,7 +1162,7 @@ function compute() {
     neverPitchedCount: neverPitchedReps.length,
   };
 
-  return { enriched, ranged, leaderboard, topPlans, maxPlan, flags, neverPitchedReps, kpis };
+  return { enriched, baseFiltered, ranged, leaderboard, topPlans, maxPlan, flags, neverPitchedReps, kpis };
 }
 
 // ===== RENDER =====
@@ -892,7 +1222,7 @@ function render() {
       else if (neverPitched) stateTag = '<span class="lb-tag idle">Not started</span>';
       else if (isIdle && state.filters.range === 'today') stateTag = '<span class="lb-tag idle">Idle today</span>';
       return `
-        <div class="lb-row">
+        <div class="lb-row" data-phone="${esc(normalizePhone(rep.mobile))}" role="button" tabindex="0">
           <span class="avatar ${isIdle ? 'idle' : ''}">${esc(initials(rep.name))}</span>
           <div class="lb-info">
             <div class="lb-name">${esc(rep.name || '—')}</div>
@@ -932,9 +1262,10 @@ function render() {
   } else {
     if (flagsCountEl) flagsCountEl.textContent = `— ${c.flags.length} total`;
     $('#flags').innerHTML = c.flags.map(f => {
+      const phoneAttr = `data-phone="${esc(normalizePhone(f.rep.mobile))}"`;
       if (f.type === 'never') {
         return `
-          <div class="flag-row">
+          <div class="flag-row" ${phoneAttr} role="button" tabindex="0">
             <span class="flag-dot warning"></span>
             <div class="flag-info">
               <div class="flag-name">${esc(f.rep.name)}</div>
@@ -946,7 +1277,7 @@ function render() {
       const dotClass = f.type === 'warning' ? 'warning' : '';
       const lastLabel = timeAgo(f.lastPitch);
       return `
-        <div class="flag-row">
+        <div class="flag-row" ${phoneAttr} role="button" tabindex="0">
           <span class="flag-dot ${dotClass}"></span>
           <div class="flag-info">
             <div class="flag-name">${esc(f.rep.name)}</div>
@@ -956,6 +1287,15 @@ function render() {
         </div>`;
     }).join('');
   }
+
+  // Live activity feed — most recent pitches across the fleet (respects ZSM/TSM filters)
+  renderActivityFeed(c.baseFiltered);
+
+  // Wire up clicks on freshly-rendered rows
+  attachRowClicks();
+
+  // If a rep-detail modal is open, refresh its contents with the latest data
+  if (state.openRepPhone) renderRepDetail();
 
   // Footer
   $('#last-updated').textContent = state.error
@@ -983,6 +1323,172 @@ function populateFilters() {
     state.filters.tsm = tsmSel.value;
   }
 }
+
+// ===== ACTIVITY FEED =====
+function renderActivityFeed(pitches) {
+  // Show the 20 most recent pitches that have a parseable timestamp
+  const recent = pitches.filter(p => p.timestamp).slice(0, 20);
+  const now = new Date();
+
+  if (recent.length === 0) {
+    $('#activity-feed').innerHTML = '<div class="empty">No pitches yet for this filter.</div>';
+    return;
+  }
+
+  $('#activity-feed').innerHTML = recent.map(p => {
+    const phone = normalizePhone(p.xfePhone);
+    const isFresh = (now - p.timestamp) < 5 * 60 * 1000; // < 5 min old
+    const pp = p.postpaidPlan || '—';
+    const wf = p.wifiPlan || '—';
+    const plansLine = `${pp} · ${wf}`;
+    return `
+      <div class="activity-row" data-phone="${esc(phone)}" role="button" tabindex="0">
+        <span class="activity-avatar">${esc(initials(p.repName))}</span>
+        <div class="activity-text">
+          <div>
+            ${isFresh ? '<span class="activity-fresh-dot"></span>' : ''}
+            <span class="activity-name">${esc(p.repName)}</span>
+            <span class="activity-detail"> · ${esc(p.tsm || '—')} TSM</span>
+          </div>
+          <div class="activity-plans">${esc(plansLine)}</div>
+        </div>
+        <span class="activity-time">${esc(timeAgo(p.timestamp))}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== REP DETAIL MODAL =====
+function openRepDetail(phone) {
+  const norm = normalizePhone(phone);
+  if (!norm) return;
+  state.openRepPhone = norm;
+  renderRepDetail();
+  $('#rep-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRepDetail() {
+  state.openRepPhone = null;
+  $('#rep-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderRepDetail() {
+  const phone = state.openRepPhone;
+  if (!phone) return;
+
+  const rep = state.reps.find(r => normalizePhone(r.mobile) === phone);
+  const repName = rep ? rep.name : 'Unknown rep';
+  const repTsm = rep ? rep.tsm : '—';
+  const repZsm = rep ? rep.zsm : '—';
+
+  // Build enriched + sorted pitches for this rep
+  const repPitches = state.pitches
+    .map(p => ({ ...p, timestamp: parseTimestamp(p.timestamp) }))
+    .filter(p => normalizePhone(p.xfePhone) === phone)
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  $('#modal-rep-name').textContent = repName;
+  const pitchWord = repPitches.length === 1 ? 'pitch' : 'pitches';
+  $('#modal-rep-meta').textContent = `${repTsm} TSM · ${repZsm} ZSM · ${repPitches.length} ${pitchWord} all-time · 📱 ${phone}`;
+
+  if (repPitches.length === 0) {
+    $('#modal-body').innerHTML = '<div class="empty">No pitches logged yet for this XFE.</div>';
+    return;
+  }
+
+  const fmtMoney = n => '₹' + Math.round(n).toLocaleString('en-IN');
+
+  $('#modal-body').innerHTML = repPitches.map(p => {
+    // Customer's current bills (col D in the sheet). The Apps Script may return this
+    // under `currentBills`, `customerCurrentMonthly`, or another key — use the resolver
+    // so the dashboard stays robust if the script's column names ever change.
+    const paysRaw = getCustomerPaysString(p);
+    const paysParts = paysRaw ? paysRaw.split(' | ').map(s => s.trim()).filter(Boolean) : [];
+    const paysLines = paysParts.map(line => {
+      const isTotal = /^TOTAL/i.test(line);
+      return `<div class="pitch-line${isTotal ? ' total' : ''}">${esc(line)}</div>`;
+    }).join('') || '<div class="pitch-line empty">No bill data recorded</div>';
+
+    // OAP pitched (cols E + F)
+    const postpaid = p.postpaidPlan || '—';
+    const wifi = p.wifiPlan || '—';
+    const oapBreakdown = getOapBreakdownString(p);
+
+    // Numbers
+    const monthlySavings = Number(p.monthlySavings) || 0;
+    const yearlySavings = Number(p.yearlySavings) || 0;
+    const ottValue = Number(p.ottValue) || 0;
+    const isPositive = monthlySavings >= 0;
+
+    // Time labels
+    let dateStr = 'Time unknown';
+    if (p.timestamp) {
+      dateStr = p.timestamp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+              + ' · ' + p.timestamp.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+    const ago = p.timestamp ? timeAgo(p.timestamp) : '';
+
+    return `
+      <div class="pitch-card">
+        <div class="pitch-time">
+          <span>${esc(dateStr)}</span>
+          ${ago ? `<span class="ago">${esc(ago)}</span>` : ''}
+        </div>
+
+        <div class="pitch-comparison">
+          <div class="pitch-side">
+            <div class="pitch-side-label">💸 Customer pays today</div>
+            ${paysLines}
+          </div>
+          <div class="pitch-side pitched">
+            <div class="pitch-side-label">🎯 Pitched as One Airtel</div>
+            <div class="pitch-plan-sub">Postpaid</div>
+            <div class="pitch-plan-name">${esc(postpaid)}</div>
+            <div class="pitch-plan-sub" style="margin-top:8px">Wi-Fi</div>
+            <div class="pitch-plan-name">${esc(wifi)}</div>
+            ${oapBreakdown ? `<div class="pitch-line total" style="font-size:11px;margin-top:8px">${esc(oapBreakdown)}</div>` : ''}
+          </div>
+        </div>
+
+        <div class="pitch-result">
+          <div class="pitch-savings ${isPositive ? 'positive' : 'negative'}">
+            ${isPositive ? '✓ Saves' : '▲ Extra'} ${fmtMoney(Math.abs(monthlySavings))}/mo
+          </div>
+          <div class="pitch-savings-sub">
+            ${fmtMoney(Math.abs(yearlySavings))}/year
+          </div>
+          ${ottValue > 0 ? `<span class="pitch-ott-pill">+ ${fmtMoney(ottValue)}/mo OTT benefits</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Attach click handlers to all clickable rows (leaderboard, flags, activity feed)
+function attachRowClicks() {
+  document.querySelectorAll('[data-phone]').forEach(row => {
+    // Avoid double-binding by tagging
+    if (row.__phoneBound) return;
+    row.__phoneBound = true;
+    const open = () => openRepDetail(row.dataset.phone);
+    row.addEventListener('click', open);
+    row.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+  });
+}
+
+// Modal close handlers
+$('#modal-close').addEventListener('click', closeRepDetail);
+$('#rep-modal').addEventListener('click', e => {
+  // Click on the backdrop (outside the modal panel) closes it
+  if (e.target.id === 'rep-modal') closeRepDetail();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.openRepPhone) closeRepDetail();
+});
 
 // ===== EVENT HANDLERS =====
 $('#zsm-filter').addEventListener('change', e => {
