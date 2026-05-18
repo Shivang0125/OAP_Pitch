@@ -584,12 +584,15 @@ const T = {
     screenshot_hint: 'Or just take a screenshot of this page — works the same.',
 
     // XFE phone + submission
-    xfe_section_label: 'Your details (customer will see this)',
+    xfe_section_label: 'Your details',
+    xfe_section_note: 'Only Name & phone shown to customer',
     xfe_name_label: 'Your name',
     xfe_name_placeholder: 'Full name',
     xfe_label: 'Your phone number',
     xfe_sublabel: '(customer will see this)',
     xfe_placeholder: '98xxxxxxxx',
+    olm_label: 'Your OLM ID',
+    olm_placeholder: 'OLM ID (e.g. A1XXXX)',
     xfe_saved: 'Saved',
     your_rep: 'Your Airtel rep',
     submit_btn: 'Submit pitch',
@@ -598,6 +601,7 @@ const T = {
     save_pdf_btn: 'Save as PDF',
     please_enter_phone: 'Please enter your phone number first.',
     please_enter_both: 'Please enter your name and phone number first.',
+    please_enter_all: 'Please enter your name, phone, and OLM ID first.',
     submission_error: 'Could not submit. Check internet and try again, or take a screenshot.',
     lifetime: 'For lifetime',
     suffix_m: ' months',
@@ -687,12 +691,15 @@ const T = {
     screenshot_hint: 'या इस page का screenshot ले लीजिए — दोनों बराबर हैं।',
 
     // XFE phone + submission
-    xfe_section_label: 'आपकी details (customer को दिखेगी)',
+    xfe_section_label: 'आपकी details',
+    xfe_section_note: 'केवल नाम और phone customer को दिखेगा',
     xfe_name_label: 'आपका नाम',
     xfe_name_placeholder: 'पूरा नाम',
     xfe_label: 'आपका phone number',
     xfe_sublabel: '(customer को दिखेगा)',
     xfe_placeholder: '98xxxxxxxx',
+    olm_label: 'आपका OLM ID',
+    olm_placeholder: 'OLM ID (जैसे A1XXXX)',
     xfe_saved: 'Save हो गया',
     your_rep: 'आपके Airtel rep',
     submit_btn: 'Pitch submit करें',
@@ -701,6 +708,7 @@ const T = {
     save_pdf_btn: 'PDF Save करें',
     please_enter_phone: 'पहले अपना phone number डालिए।',
     please_enter_both: 'पहले अपना नाम और phone number डालिए।',
+    please_enter_all: 'पहले अपना नाम, phone और OLM ID डालिए।',
     submission_error: 'Submit नहीं हो पाया। Internet check करके फिर try करें, या screenshot लीजिए।',
     lifetime: 'हमेशा के लिए',
     suffix_m: ' महीने',
@@ -792,7 +800,7 @@ function App() {
     try { localStorage.setItem('oap_xfe_phone', xfePhone); } catch {}
   }, [xfePhone]);
 
-  // XFE Name — auto-saved, persists across sessions
+// XFE Name — auto-saved, persists across sessions
   const [xfeName, setXfeName] = useState(() => {
     try { return localStorage.getItem('oap_xfe_name') || ''; } catch { return ''; }
   });
@@ -800,6 +808,14 @@ function App() {
     try { localStorage.setItem('oap_xfe_name', xfeName); } catch {}
   }, [xfeName]);
 
+  // OLM ID — auto-saved. INTERNAL ONLY: never appears on customer-facing savings stamp / print / PDF.
+  const [olmId, setOlmId] = useState(() => {
+    try { return localStorage.getItem('oap_olm_id') || ''; } catch { return ''; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('oap_olm_id', olmId); } catch {}
+  }, [olmId]);
+  
   // Submission state
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -944,11 +960,12 @@ function App() {
   };
 
   // Submit pitch data to Google Sheet
-  const submitToSheet = async () => {
+ const submitToSheet = async () => {
     const phone = xfePhone.trim();
     const name = xfeName.trim();
-    if (!phone || !name) {
-      alert(t('please_enter_both'));
+    const olm = olmId.trim().toUpperCase();
+    if (!phone || !name || !olm) {
+      alert(t('please_enter_all'));
       return;
     }
     setSubmitting(true);
@@ -958,6 +975,7 @@ function App() {
       const payload = {
         xfeName: name,
         xfePhone: phone,
+        olmId: olm,                              // primary identifier for dashboard mapping
         customerCurrentMonthly: buildBillBreakdown(),
         postpaidPlan: ppPlan ? `₹${ppPlan.base} ${ppPlan.label} (${ppPlan.sims} SIM${ppPlan.sims>1?'s':''})` : '',
         wifiPlan: wifiPlan ? `₹${wifiPlan.base} ${wifiPlan.speedLabel}${wifiIncludesDTH ? ' +DTH' : ''}` : '',
@@ -1006,16 +1024,19 @@ function App() {
         </div>
       </header>
 
-      {/* XFE NAME + PHONE STRIP — auto-saved, visible to customer in savings stamp */}
+    {/* XFE NAME + PHONE + OLM ID STRIP — auto-saved.
+          Name & phone appear on the customer-facing savings stamp.
+          OLM ID is internal (used for dashboard mapping) — NEVER shown to customer or in print. */}
       <div className="bg-cream2 border-b border-ink/10 no-print">
         <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
             <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('xfe_section_label')}</div>
-            {xfeName.trim() && xfePhone.trim() && (
+            {xfeName.trim() && xfePhone.trim() && olmId.trim() && (
               <span className="text-[11px] text-sage font-semibold mono">✓ {t('xfe_saved')}</span>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="text-[10px] text-warmgray italic mb-2">{t('xfe_section_note')}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input
               type="text"
               placeholder={t('xfe_name_placeholder')}
@@ -1032,6 +1053,14 @@ function App() {
               onChange={e => setXfePhone(e.target.value)}
               className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white tabular text-base font-semibold focus:border-airtelDeep focus:outline-none"
               style={{minHeight:'40px'}}
+            />
+            <input
+              type="text"
+              placeholder={t('olm_placeholder')}
+              value={olmId}
+              onChange={e => setOlmId(e.target.value.toUpperCase())}
+              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white tabular text-base font-semibold focus:border-airtelDeep focus:outline-none"
+              style={{minHeight:'40px', textTransform:'uppercase'}}
             />
           </div>
         </div>
@@ -1397,7 +1426,7 @@ function App() {
             <div className="mt-8 flex flex-wrap gap-3 no-print">
               <button
                 onClick={submitToSheet}
-                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim()}
+                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim() || !olmId.trim()}
                 className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting ? (
