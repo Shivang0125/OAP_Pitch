@@ -368,6 +368,55 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   font-weight: 700;
 }
 
+/* ========= FOLLOW-UP STRIP (top of page) ========= */
+.followup-card {
+  background: linear-gradient(135deg, rgba(187,14,31,0.08) 0%, rgba(187,14,31,0.02) 100%);
+  border: 1px solid rgba(187,14,31,0.3);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+.followup-card .card-title { color: #FF6B6B; }
+.followup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-right: -8px;
+  padding-right: 8px;
+}
+.followup-list::-webkit-scrollbar { width: 6px; }
+.followup-list::-webkit-scrollbar-track { background: transparent; }
+.followup-list::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.followup-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.followup-row:hover { background: rgba(0,0,0,0.35); }
+.followup-name { font-weight: 600; font-size: 13px; }
+.followup-meta { font-size: 11px; color: #aaa; margin-top: 2px; }
+.followup-time {
+  font-size: 11px;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.followup-empty {
+  text-align: center;
+  padding: 18px;
+  color: #888;
+  font-style: italic;
+  font-size: 13px;
+}
+
 /* ========= ACTIVITY FEED ========= */
 .activity-card { margin-bottom: 24px; }
 .activity-list {
@@ -729,6 +778,15 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       <span>Refresh</span>
     </button>
   </div>
+
+<!-- TODAY'S FOLLOW-UPS (top priority) -->
+  <section class="followup-card" id="followup-section">
+    <div class="card-title">
+      🔔 Follow-up pitches today
+      <span id="followup-count" style="color:#888;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0"></span>
+    </div>
+    <div id="followup-list" class="followup-list"></div>
+  </section>
 
   <!-- KPI CARDS -->
   <div class="kpi-grid">
@@ -1313,6 +1371,9 @@ function render() {
     }).join('');
   }
 
+ // Today's follow-up pitches (top of page) — respects ZSM/TSM filters
+  renderFollowUps(c.baseFiltered);
+
   // Live activity feed — most recent pitches across the fleet (respects ZSM/TSM filters)
   renderActivityFeed(c.baseFiltered);
 
@@ -1347,6 +1408,40 @@ function populateFilters() {
     tsmSel.value = tsms.includes(state.filters.tsm) ? state.filters.tsm : 'all';
     state.filters.tsm = tsmSel.value;
   }
+}
+
+// ===== TODAY'S FOLLOW-UPS =====
+function renderFollowUps(pitches) {
+  // Today's pitches where the XFE marked the customer as a follow-up
+  const todayFollowUps = pitches.filter(p =>
+    p.timestamp &&
+    inRange(p.timestamp, 'today') &&
+    String(p.followUp || '').trim().toLowerCase() === 'yes'
+  );
+
+  const countEl = document.getElementById('followup-count');
+  if (todayFollowUps.length === 0) {
+    if (countEl) countEl.textContent = '';
+    $('#followup-list').innerHTML = '<div class="followup-empty">No follow-up pitches logged today.</div>';
+    return;
+  }
+  if (countEl) countEl.textContent = `— ${todayFollowUps.length} today`;
+
+  $('#followup-list').innerHTML = todayFollowUps.map(p => {
+    const olm = normalizeOlm(p.olmId);
+    const pp = p.postpaidPlan || '—';
+    const wf = p.wifiPlan || '—';
+    return `
+      <div class="followup-row" data-olmid="${esc(olm)}" role="button" tabindex="0">
+        <span class="activity-avatar">${esc(initials(p.repName))}</span>
+        <div>
+          <div class="followup-name">${esc(p.repName)} <span style="color:#888;font-weight:500;font-size:11px"> · ${esc(p.tsm || '—')} TSM</span></div>
+          <div class="followup-meta">${esc(pp)} · ${esc(wf)}</div>
+        </div>
+        <span class="followup-time">${esc(timeAgo(p.timestamp))}</span>
+      </div>
+    `;
+  }).join('');
 }
 
 // ===== ACTIVITY FEED =====
