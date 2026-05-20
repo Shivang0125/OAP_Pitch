@@ -368,6 +368,74 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   font-weight: 700;
 }
 
+/* ========= FOLLOW-UP TAG (inside pitch cards) ========= */
+.followup-tag {
+  background: rgba(251,191,36,0.15);
+  border: 1px solid rgba(251,191,36,0.4);
+  color: #FBBF24;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ========= TSM ROLLUP CARD ========= */
+.tsm-rollup-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+.tsm-rollup-table {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 0;
+  font-size: 13px;
+}
+.tsm-rollup-header {
+  display: contents;
+}
+.tsm-rollup-header > div {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  font-weight: 600;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid #2a2a2a;
+}
+.tsm-rollup-header > div.num { text-align: right; }
+.tsm-rollup-row {
+  display: contents;
+}
+.tsm-rollup-row > div {
+  padding: 10px 12px;
+  border-bottom: 1px solid #2a2a2a;
+  align-self: center;
+}
+.tsm-rollup-row:last-child > div { border-bottom: 0; }
+.tsm-rollup-row .tsm-name { font-weight: 600; }
+.tsm-rollup-row .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.tsm-rollup-row .num.followups { color: #FBBF24; }
+.tsm-rollup-row .num.ratio { color: #888; font-weight: 500; font-size: 12px; }
+
+/* ========= LEADERBOARD FOLLOW-UP MINI-STAT ========= */
+.lb-followup-stat {
+  font-size: 10px;
+  color: #FBBF24;
+  margin-top: 2px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ========= FOLLOW-UP STRIP (top of page) ========= */
 .followup-card {
   background: linear-gradient(135deg, rgba(187,14,31,0.08) 0%, rgba(187,14,31,0.02) 100%);
@@ -788,6 +856,15 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     <div id="followup-list" class="followup-list"></div>
   </section>
 
+  <!-- TSM ROLLUP — pitches vs follow-ups by TSM -->
+  <section class="tsm-rollup-card" id="tsm-rollup-section">
+    <div class="card-title">
+      Pitches → follow-ups by TSM
+      <span id="tsm-rollup-sub" style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0">— for the selected date range</span>
+    </div>
+    <div class="tsm-rollup-table" id="tsm-rollup-table"></div>
+  </section>
+
   <!-- KPI CARDS -->
   <div class="kpi-grid">
     <div class="kpi-card">
@@ -1162,19 +1239,21 @@ const enriched = state.pitches.map(p => {
     pitchesByOlm[id].push(p);
   });
 
-  // Leaderboard
+ // Leaderboard
   const leaderboard = relevantReps.map(rep => {
     const id = normalizeOlm(rep.olmId);
     const pitches = id ? (pitchesByOlm[id] || []) : [];
     const allRepPitches = id ? baseFiltered.filter(p => normalizeOlm(p.olmId) === id) : [];
+    const followUpsInRange = pitches.filter(p => String(p.followUp || '').trim().toLowerCase() === 'yes').length;
     const lastEver = allRepPitches.length ? allRepPitches[0].timestamp : null;
     return {
       ...rep,
       pitchCount: pitches.length,
+      followUpCount: followUpsInRange,
       lastPitch: pitches.length ? pitches[0].timestamp : null,
       lastEverPitch: lastEver,
     };
-  }).sort((a, b) => {
+  }).sort((a, b) => {   
     if (b.pitchCount !== a.pitchCount) return b.pitchCount - a.pitchCount;
     if (a.lastEverPitch && b.lastEverPitch) return b.lastEverPitch - a.lastEverPitch;
     if (a.lastEverPitch) return -1;
@@ -1313,6 +1392,7 @@ function render() {
               <span>${esc(rep.tsm || '—')} TSM</span>
               ${stateTag}
             </div>
+            ${rep.followUpCount > 0 ? `<div class="lb-followup-stat">🔔 ${rep.followUpCount} follow-up${rep.followUpCount > 1 ? 's' : ''} (${Math.round(rep.followUpCount / rep.pitchCount * 100)}%)</div>` : ''}
           </div>
           <div class="lb-pitchcount">
             <div class="lb-count">${rep.pitchCount}</div>
@@ -1371,8 +1451,11 @@ function render() {
     }).join('');
   }
 
- // Today's follow-up pitches (top of page) — respects ZSM/TSM filters
+// Today's follow-up pitches (top of page) — respects ZSM/TSM filters
   renderFollowUps(c.baseFiltered);
+
+  // TSM rollup — pitches and follow-ups by TSM for the selected date range
+  renderTsmRollup(c.ranged);
 
   // Live activity feed — most recent pitches across the fleet (respects ZSM/TSM filters)
   renderActivityFeed(c.baseFiltered);
@@ -1410,9 +1493,55 @@ function populateFilters() {
   }
 }
 
+// ===== TSM ROLLUP =====
+// One row per TSM: total pitches in range, follow-ups in range, ratio.
+// Respects ZSM/TSM filters via the `ranged` input passed in from compute().
+function renderTsmRollup(rangedPitches) {
+  const byTsm = {};
+  rangedPitches.forEach(p => {
+    const tsm = p.tsm || 'Unknown';
+    if (!byTsm[tsm]) byTsm[tsm] = { pitches: 0, followUps: 0 };
+    byTsm[tsm].pitches++;
+    if (String(p.followUp || '').trim().toLowerCase() === 'yes') {
+      byTsm[tsm].followUps++;
+    }
+  });
+
+  const rows = Object.entries(byTsm)
+    .map(([tsm, stats]) => ({ tsm, ...stats, ratio: stats.pitches ? stats.followUps / stats.pitches : 0 }))
+    .sort((a, b) => b.followUps - a.followUps || b.pitches - a.pitches);
+
+  if (rows.length === 0) {
+    $('#tsm-rollup-table').innerHTML = '<div class="empty" style="grid-column: 1 / -1">No pitches in range yet.</div>';
+    return;
+  }
+
+  const header = `
+    <div class="tsm-rollup-header">
+      <div>TSM</div>
+      <div class="num">Pitches</div>
+      <div class="num">Follow-ups</div>
+      <div class="num">Ratio</div>
+    </div>
+  `;
+
+  const body = rows.map(r => `
+    <div class="tsm-rollup-row">
+      <div class="tsm-name">${esc(r.tsm)}</div>
+      <div class="num">${r.pitches}</div>
+      <div class="num followups">${r.followUps}</div>
+      <div class="num ratio">${Math.round(r.ratio * 100)}%</div>
+    </div>
+  `).join('');
+
+  $('#tsm-rollup-table').innerHTML = header + body;
+}
+
 // ===== TODAY'S FOLLOW-UPS =====
+// One row PER follow-up pitch (not per XFE) so each individual follow-up is
+// identifiable. Clicking opens the XFE's modal where the matching pitch is
+// flagged with a "FOLLOW-UP" tag.
 function renderFollowUps(pitches) {
-  // Today's pitches where the XFE marked the customer as a follow-up
   const todayFollowUps = pitches.filter(p =>
     p.timestamp &&
     inRange(p.timestamp, 'today') &&
@@ -1427,15 +1556,18 @@ function renderFollowUps(pitches) {
   }
   if (countEl) countEl.textContent = `— ${todayFollowUps.length} today`;
 
+  // Group consecutive entries by XFE for readability, but keep each pitch
+  // as a separate row so TSMs can see each individual follow-up.
   $('#followup-list').innerHTML = todayFollowUps.map(p => {
     const olm = normalizeOlm(p.olmId);
     const pp = p.postpaidPlan || '—';
     const wf = p.wifiPlan || '—';
+    const timeStr = p.timestamp.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     return `
       <div class="followup-row" data-olmid="${esc(olm)}" role="button" tabindex="0">
         <span class="activity-avatar">${esc(initials(p.repName))}</span>
         <div>
-          <div class="followup-name">${esc(p.repName)} <span style="color:#888;font-weight:500;font-size:11px"> · ${esc(p.tsm || '—')} TSM</span></div>
+          <div class="followup-name">${esc(p.repName)} <span style="color:#888;font-weight:500;font-size:11px"> · ${esc(p.tsm || '—')} TSM · ${esc(timeStr)}</span></div>
           <div class="followup-meta">${esc(pp)} · ${esc(wf)}</div>
         </div>
         <span class="followup-time">${esc(timeAgo(p.timestamp))}</span>
@@ -1558,6 +1690,12 @@ function renderRepDetail() {
       ? `<span style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);color:#FBBF24;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">Matched via phone</span>`
       : '';
 
+    // Was this pitch flagged as a follow-up customer by the XFE?
+    const isFollowUp = String(p.followUp || '').trim().toLowerCase() === 'yes';
+    const followUpTag = isFollowUp
+      ? `<span class="followup-tag">🔔 Follow-up</span>`
+      : '';
+
     // Time labels
     let dateStr = 'Time unknown';
     if (p.timestamp) {
@@ -1567,9 +1705,9 @@ function renderRepDetail() {
     const ago = p.timestamp ? timeAgo(p.timestamp) : '';
 
     return `
-      <div class="pitch-card">
-        <div class="pitch-time">
+    <div class="pitch-time">
           <span>${esc(dateStr)}</span>
+          ${followUpTag}
           ${fallbackTag}
           ${ago ? `<span class="ago">${esc(ago)}</span>` : ''}
         </div>
