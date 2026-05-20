@@ -602,6 +602,11 @@ const T = {
     please_enter_phone: 'Please enter your phone number first.',
     please_enter_both: 'Please enter your name and phone number first.',
     please_enter_all: 'Please enter your name, phone, and OLM ID first.',
+    followup_label: 'Follow-up customer?',
+    followup_hint: 'Mandatory — pick one to submit',
+    followup_yes: 'Yes',
+    followup_no: 'No',
+    please_pick_followup: 'Please mark whether this is a follow-up customer.',
     submission_error: 'Could not submit. Check internet and try again, or take a screenshot.',
     lifetime: 'For lifetime',
     suffix_m: ' months',
@@ -709,6 +714,11 @@ const T = {
     please_enter_phone: 'पहले अपना phone number डालिए।',
     please_enter_both: 'पहले अपना नाम और phone number डालिए।',
     please_enter_all: 'पहले अपना नाम, phone और OLM ID डालिए।',
+    followup_label: 'Follow-up customer है?',
+    followup_hint: 'जरूरी — submit करने के लिए एक चुनिए',
+    followup_yes: 'हाँ',
+    followup_no: 'नहीं',
+    please_pick_followup: 'Follow-up customer है या नहीं, mark कीजिए।',
     submission_error: 'Submit नहीं हो पाया। Internet check करके फिर try करें, या screenshot लीजिए।',
     lifetime: 'हमेशा के लिए',
     suffix_m: ' महीने',
@@ -819,6 +829,10 @@ function App() {
   // Submission state
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Follow-up flag — per-pitch (resets with Reset). Mandatory; null until picked.
+  // Not persisted across sessions and never shown to customer / in print.
+  const [followUp, setFollowUp] = useState(null);
 
   // STEP 1 inputs — current bills (gst: per-row GST toggle)
   // NOTE: `perMonth` is the per-SIM (per-connection) cost. Row total = count × perMonth.
@@ -936,9 +950,10 @@ function App() {
       wifiOthers:     { count: '', perMonth: '', gst: false },
       tvAirtel:       { count: '', perMonth: '', gst: false },
       tvOthers:       { count: '', perMonth: '', gst: false },
-      entertainment:  '',
+     entertainment:  '',
     });
     setSubmitted(false);
+    setFollowUp(null);
   };
 
   // Build a readable breakdown of customer's current bills
@@ -968,6 +983,10 @@ function App() {
       alert(t('please_enter_all'));
       return;
     }
+    if (followUp !== 'Yes' && followUp !== 'No') {
+      alert(t('please_pick_followup'));
+      return;
+    }
     setSubmitting(true);
     try {
       const ppPlan = POSTPAID_PLANS.find(p => p.id === ppId);
@@ -984,6 +1003,7 @@ function App() {
         monthlySavings: Math.round(monthlySavings),
         yearlySavings: Math.round(yearlySavings),
         ottValue: Math.round(oapBenefitsValue),
+        followUp: followUp,                          // 'Yes' or 'No'
       };
 
       // Use no-cors mode since Apps Script returns opaque response from cross-origin
@@ -1420,13 +1440,47 @@ function App() {
           </div>
         )}
 
-        {/* Actions */}
+       {/* Actions */}
         {!submitted ? (
           <>
-            <div className="mt-8 flex flex-wrap gap-3 no-print">
+            {/* Follow-up toggle — mandatory before submission. Internal data point, never shown to customer. */}
+            <div className="mt-8 no-print">
+              <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                <span className="text-[12px] mono uppercase tracking-wider text-warmgray font-semibold">{t('followup_label')}</span>
+                <span className="text-[10px] text-warmgray italic">{t('followup_hint')}</span>
+              </div>
+              <div className="inline-flex rounded-md overflow-hidden border-2 border-ink/15" style={{background:'white'}}>
+                <button
+                  type="button"
+                  onClick={() => setFollowUp('Yes')}
+                  className="px-5 py-2 text-sm font-semibold transition"
+                  style={{
+                    background: followUp === 'Yes' ? '#BB0E1F' : 'white',
+                    color: followUp === 'Yes' ? '#FAF6EE' : '#1A1714',
+                    minWidth: '72px',
+                  }}
+                >
+                  {t('followup_yes')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFollowUp('No')}
+                  className="px-5 py-2 text-sm font-semibold transition border-l-2 border-ink/15"
+                  style={{
+                    background: followUp === 'No' ? '#1A1714' : 'white',
+                    color: followUp === 'No' ? '#FAF6EE' : '#1A1714',
+                    minWidth: '72px',
+                  }}
+                >
+                  {t('followup_no')}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3 no-print">
               <button
                 onClick={submitToSheet}
-                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim() || !olmId.trim()}
+                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim() || !olmId.trim() || (followUp !== 'Yes' && followUp !== 'No')}
                 className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting ? (
