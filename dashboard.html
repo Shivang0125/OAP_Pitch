@@ -116,6 +116,26 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   cursor: pointer;
 }
 .filter-select:focus { outline: none; border-color: #555; }
+
+/* Date inputs need the NATIVE calendar picker, so no appearance:none / custom arrow */
+.filter-date {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 150px;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.filter-date:focus { outline: none; border-color: #555; }
+/* Make the native calendar icon visible and clickable on dark bg */
+.filter-date::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
 .refresh-btn {
   background: #1a1a1a;
   border: 1px solid #2a2a2a;
@@ -842,13 +862,13 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         <option value="custom">Custom range…</option>
       </select>
     </div>
-    <div class="filter-group" id="custom-from-group" style="display:none">
+   <div class="filter-group" id="custom-from-group" style="display:none">
       <span class="label">From</span>
-      <input type="date" class="filter-select" id="custom-from" style="min-width:150px">
+      <input type="date" class="filter-date" id="custom-from">
     </div>
     <div class="filter-group" id="custom-to-group" style="display:none">
       <span class="label">To</span>
-      <input type="date" class="filter-select" id="custom-to" style="min-width:150px">
+      <input type="date" class="filter-date" id="custom-to">
     </div>
     <button class="refresh-btn" id="refresh-btn">      <span class="arrow">↻</span>
       <span>Refresh</span>
