@@ -831,7 +831,7 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         <option value="all">All TSMs</option>
       </select>
     </div>
-    <div class="filter-group">
+   <div class="filter-group">
       <span class="label">Date range</span>
       <select class="filter-select" id="range-filter">
         <option value="today">Today</option>
@@ -839,24 +839,23 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         <option value="week">Last 7 days</option>
         <option value="month">This month</option>
         <option value="all">All time</option>
+        <option value="custom">Custom range…</option>
       </select>
     </div>
-    <button class="refresh-btn" id="refresh-btn">
-      <span class="arrow">↻</span>
+    <div class="filter-group" id="custom-from-group" style="display:none">
+      <span class="label">From</span>
+      <input type="date" class="filter-select" id="custom-from" style="min-width:150px">
+    </div>
+    <div class="filter-group" id="custom-to-group" style="display:none">
+      <span class="label">To</span>
+      <input type="date" class="filter-select" id="custom-to" style="min-width:150px">
+    </div>
+    <button class="refresh-btn" id="refresh-btn">      <span class="arrow">↻</span>
       <span>Refresh</span>
     </button>
   </div>
 
-<!-- TODAY'S FOLLOW-UPS (top priority) -->
-  <section class="followup-card" id="followup-section">
-    <div class="card-title">
-      🔔 Follow-up pitches today
-      <span id="followup-count" style="color:#888;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0"></span>
-    </div>
-    <div id="followup-list" class="followup-list"></div>
-  </section>
-
-  <!-- TSM ROLLUP — pitches vs follow-ups by TSM -->
+<!-- TSM ROLLUP — pitches vs follow-ups by TSM -->
   <section class="tsm-rollup-card" id="tsm-rollup-section">
     <div class="card-title">
       Pitches → follow-ups by TSM
@@ -908,6 +907,15 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       </section>
     </div>
   </div>
+
+  <!-- TODAY'S FOLLOW-UPS -->
+  <section class="followup-card" id="followup-section">
+    <div class="card-title">
+      🔔 Follow-up pitches today
+      <span id="followup-count" style="color:#888;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0"></span>
+    </div>
+    <div id="followup-list" class="followup-list"></div>
+  </section>
 
   <!-- LIVE ACTIVITY FEED -->
   <section class="card activity-card">
@@ -1094,6 +1102,18 @@ function inRange(d, range) {
   if (range === 'month') {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }
+  if (range === 'custom') {
+    // Inclusive of both endpoints. A missing endpoint means "open-ended" on that side.
+    const from = state.filters.customFrom ? startOfDay(new Date(state.filters.customFrom)) : null;
+    let to = null;
+    if (state.filters.customTo) {
+      to = new Date(state.filters.customTo);
+      to.setHours(23, 59, 59, 999); // include the whole "to" day
+    }
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  }
   return true;
 }
 
@@ -1122,7 +1142,7 @@ function timeOfDay(d) {
 const state = {
   pitches: [],
   reps: [],
-  filters: { zsm: 'all', tsm: 'all', range: 'today' },
+  filters: { zsm: 'all', tsm: 'all', range: 'today', customFrom: null, customTo: null },
   lastFetch: null,
   error: null,
   openRepOlmId: null, // when set, the rep detail modal is open for this OLM ID
@@ -1344,7 +1364,10 @@ function render() {
   $('#kpi-total').textContent = '/' + c.kpis.totalReps;
   $('#kpi-active-sub').textContent = state.filters.range === 'today' ? 'pitched today' : 'in selected range';
   $('#kpi-pitches').textContent = c.kpis.totalPitches;
-  $('#kpi-pitches-sub').textContent = state.filters.range === 'today' ? 'today' : 'in selected range';
+  $('#kpi-pitches-sub').textContent = state.filters.range === 'today' ? 'today'
+    : (state.filters.range === 'custom' && (state.filters.customFrom || state.filters.customTo))
+      ? `${state.filters.customFrom || '…'} → ${state.filters.customTo || '…'}`
+      : 'in selected range';
   $('#kpi-adopted').textContent = c.kpis.adoptedCount;
   $('#kpi-adopted-total').textContent = '/' + c.kpis.totalReps;
   const pct = c.kpis.totalReps ? Math.round((c.kpis.adoptedCount / c.kpis.totalReps) * 100) : 0;
@@ -1705,7 +1728,8 @@ function renderRepDetail() {
     const ago = p.timestamp ? timeAgo(p.timestamp) : '';
 
     return `
-    <div class="pitch-time">
+      <div class="pitch-card">
+        <div class="pitch-time">
           <span>${esc(dateStr)}</span>
           ${followUpTag}
           ${fallbackTag}
@@ -1771,9 +1795,26 @@ $('#zsm-filter').addEventListener('change', e => {
   render();
 });
 $('#tsm-filter').addEventListener('change', e => { state.filters.tsm = e.target.value; render(); });
-$('#range-filter').addEventListener('change', e => { state.filters.range = e.target.value; render(); });
+$('#range-filter').addEventListener('change', e => {
+  state.filters.range = e.target.value;
+  const showCustom = e.target.value === 'custom';
+  $('#custom-from-group').style.display = showCustom ? '' : 'none';
+  $('#custom-to-group').style.display = showCustom ? '' : 'none';
+  // Default the custom range to "this month so far" the first time it's opened
+  if (showCustom && !state.filters.customFrom && !state.filters.customTo) {
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const toIso = d => d.toISOString().slice(0, 10);
+    state.filters.customFrom = toIso(firstOfMonth);
+    state.filters.customTo = toIso(now);
+    $('#custom-from').value = state.filters.customFrom;
+    $('#custom-to').value = state.filters.customTo;
+  }
+  render();
+});
+$('#custom-from').addEventListener('change', e => { state.filters.customFrom = e.target.value || null; render(); });
+$('#custom-to').addEventListener('change', e => { state.filters.customTo = e.target.value || null; render(); });
 $('#refresh-btn').addEventListener('click', fetchData);
-
 // ===== INIT =====
 fetchData();
 setInterval(fetchData, POLL_INTERVAL);
