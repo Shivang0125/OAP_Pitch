@@ -165,7 +165,7 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* ========= KPI CARDS ========= */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -247,7 +247,7 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* ========= LEADERBOARD ========= */
 .lb-row {
   display: grid;
-  grid-template-columns: 40px 1fr auto auto;
+  grid-template-columns: 40px 1fr auto;
   align-items: center;
   gap: 12px;
   padding: 10px 0;
@@ -892,11 +892,6 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       <div class="value tabular"><span id="kpi-adopted">0</span><span class="small" id="kpi-adopted-total">/0</span></div>
       <div class="sub" id="kpi-adopted-sub">XFEs ever pitched</div>
     </div>
-    <div class="kpi-card">
-      <div class="label">Pitches today</div>
-      <div class="value tabular" id="kpi-today">0</div>
-      <div class="sub" id="kpi-today-sub">across whole fleet</div>
-    </div>
   </div>
 
   <!-- MAIN GRID: LEADERBOARD + SIDE -->
@@ -910,11 +905,6 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       <section class="card">
         <div class="card-title">Most pitched plans</div>
         <div id="plans"></div>
-      </section>
-
-      <section class="card flags-card">
-        <div class="card-title">Flags <span id="flags-count" style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0"></span></div>
-        <div id="flags" class="flags-list"></div>
       </section>
     </div>
   </div>
@@ -944,6 +934,12 @@ button { border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       <span style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0">— most recent pitches across the fleet · tap a row to drill in</span>
     </div>
     <div id="activity-feed" class="activity-list"></div>
+  </section>
+
+  <!-- FLAGS (moved to bottom) -->
+  <section class="card flags-card" style="margin-bottom:24px">
+    <div class="card-title">Flags <span id="flags-count" style="color:#555;font-weight:500;text-transform:none;font-family:inherit;letter-spacing:0"></span></div>
+    <div id="flags" class="flags-list"></div>
   </section>
 
   <footer style="text-align:center; color:#444; font-size:11px; padding: 24px 0 8px; font-family: ui-monospace, monospace; letter-spacing:0.06em; text-transform:uppercase">
@@ -1392,15 +1388,6 @@ function render() {
   $('#kpi-adopted-total').textContent = '/' + c.kpis.totalReps;
   const pct = c.kpis.totalReps ? Math.round((c.kpis.adoptedCount / c.kpis.totalReps) * 100) : 0;
   $('#kpi-adopted-sub').textContent = `${pct}% of fleet · ${c.kpis.neverPitchedCount} not started`;
-  $('#kpi-today').textContent = c.kpis.pitchesToday;
-  const delta = c.kpis.pitchesToday - c.kpis.pitchesYesterday;
-  if (delta > 0) {
-    $('#kpi-today-sub').innerHTML = `<span style="color:#4ADE80">▲ +${delta}</span> vs yesterday`;
-  } else if (delta < 0) {
-    $('#kpi-today-sub').innerHTML = `<span style="color:#F87171">▼ ${delta}</span> vs yesterday`;
-  } else {
-    $('#kpi-today-sub').textContent = 'same as yesterday';
-  }
 
   // Leaderboard
   if (c.leaderboard.length === 0) {
@@ -1415,13 +1402,6 @@ function render() {
       const isIdle = rep.pitchCount === 0;
       const neverPitched = !rep.lastEverPitch && rep.pitchCount === 0;
       const isTop = showTopTag && rep.pitchCount === maxPitches;
-      let lastEverLabel = '';
-      if (rep.lastEverPitch) {
-        const tag = timeAgo(rep.lastEverPitch);
-        lastEverLabel = tag ? 'Last pitch ' + tag : '';
-      } else if (rep.pitchCount > 0) {
-        lastEverLabel = 'Time unknown';
-      }
       let stateTag = '';
       if (isTop) stateTag = '<span class="lb-tag top">TOP</span>';
       else if (neverPitched) stateTag = '<span class="lb-tag idle">Not started</span>';
@@ -1441,7 +1421,6 @@ function render() {
             <div class="lb-count">${rep.pitchCount}</div>
             <div class="lb-count-label">pitches</div>
           </div>
-          <div class="lb-lasttime">${esc(lastEverLabel)}</div>
         </div>
       `;
     }).join('');
