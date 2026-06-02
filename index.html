@@ -495,15 +495,17 @@ const WIFI_PLANS = [
 const WIFI_INCLUDES_DTH = new Set(['wifi_599', 'wifi_899', 'wifi_1199', 'wifi_1599', 'wifi_3999']);
 
 // ── AUTO-RECOMMEND CONFIG ─────────────────────────────────────────────
-// Plans the auto-recommender SKIPS when picking the cheapest combination.
-// (These can STILL be chosen manually from the dropdowns by the rep.)
-//   • wifi_499 — excluded per requirement.
-//   • pp_449   — the "Individual Lite" plan (Xstream-only, almost no OTT value).
-//                Excluded so a single-SIM profile auto-picks the ₹549 Individual
-//                plan (full benefits, better pitch). Remove 'pp_449' from this set
-//                if you'd rather have the ₹449 lite plan auto-selected.
-const AUTO_EXCLUDE_WIFI = new Set(['wifi_499']);
-const AUTO_EXCLUDE_PP   = new Set(['pp_449']);
+// Plans/rules the auto-recommender uses when picking the cheapest combination.
+// (Any plan can STILL be chosen manually from the dropdowns by the rep.)
+//   • Postpaid: no plans excluded — ₹449 "Individual Lite" is eligible, so a
+//     single-SIM profile auto-picks the cheapest plan (₹449).
+//   • Wi-Fi: the recommender suggests one tier BELOW the customer's current
+//     Wi-Fi spend (cheaper, but not a big drop). The ₹499 plan is only offered
+//     when the customer's current Wi-Fi bill is below WIFI_499_BILL_CEILING;
+//     otherwise ₹499 is skipped and the floor is ₹599.
+const AUTO_EXCLUDE_WIFI    = new Set([]);  // plans NEVER auto-suggested (none today)
+const AUTO_EXCLUDE_PP      = new Set([]);
+const WIFI_499_BILL_CEILING = 600;         // ₹499 allowed only if current bill < this
 
 // OTT catalog (monthly value)
 const OTT = {
@@ -802,11 +804,17 @@ function buildOAP(wifiId, postpaidId) {
 /* ============================================================
    AUTO-RECOMMEND — cheapest OAP combo for the entered profile
    ============================================================ */
-// Given the number of mobile SIMs in the customer profile, return the cheapest
-// postpaid plan that covers those SIMs + the cheapest Wi-Fi plan (both honouring
-// AUTO_EXCLUDE_* above). Wi-Fi has no SIM dependency, so it resolves to the
-// cheapest allowed plan (₹599, which already bundles DTH).
-function recommendCheapest(neededSims) {
+// Given the customer's mobile-SIM count and current Wi-Fi base spend, return the
+// cheapest postpaid plan that covers those SIMs + a cheaper Wi-Fi plan that sits
+// one tier below the customer's current Wi-Fi spend (honouring AUTO_EXCLUDE_* and
+// the ₹499 ceiling rule).
+//
+// Wi-Fi: plan price is the proxy for tier. We suggest the most expensive plan that
+// is still strictly cheaper than what the customer pays today — i.e. one step down,
+// not a deep cut. A customer on ~₹899 is shown ₹799 (not ₹599). The ₹499 plan is
+// only offered when the customer's current Wi-Fi bill is below WIFI_499_BILL_CEILING.
+// A customer with no Wi-Fi today gets the cheapest non-₹499 plan, ₹599 (bundles DTH).
+function recommendCheapest(neededSims, currentWifiBase) {
   const n = Math.max(1, Math.round(neededSims || 0));
   const ppPool = POSTPAID_PLANS.filter(p => !AUTO_EXCLUDE_PP.has(p.id));
   // cheapest plan that has enough SIMs; if none can cover it, fall back to the
@@ -814,7 +822,21 @@ function recommendCheapest(neededSims) {
   const covering = ppPool.filter(p => p.sims >= n).sort((a, b) => a.base - b.base);
   const fallback = [...ppPool].sort((a, b) => b.sims - a.sims || a.base - b.base);
   const pp = covering[0] || fallback[0];
-  const wifi = WIFI_PLANS.filter(w => !AUTO_EXCLUDE_WIFI.has(w.id)).sort((a, b) => a.base - b.base)[0];
+
+  // Wi-Fi tier ladder (cheapest → dearest), gated by the exclude set and the
+  // ₹499 rule: ₹499 is in play only when the customer has a sub-ceiling bill.
+  const floor   = Math.max(0, currentWifiBase || 0);
+  const allow499 = floor > 0 && floor < WIFI_499_BILL_CEILING;
+  const wifiPool = WIFI_PLANS
+    .filter(w => !AUTO_EXCLUDE_WIFI.has(w.id))
+    .filter(w => w.id === 'wifi_499' ? allow499 : true)
+    .sort((a, b) => a.base - b.base);
+  // one tier down = the dearest plan priced strictly below their current spend;
+  // if nothing sits below (no Wi-Fi today, or spend under the cheapest plan),
+  // fall back to the cheapest plan in the allowed pool.
+  const below = wifiPool.filter(w => w.base < floor);
+  const wifi  = below.length ? below[below.length - 1] : wifiPool[0];
+
   return { ppId: pp ? pp.id : null, wifiId: wifi ? wifi.id : null, neededSims: n };
 }
 
@@ -900,18 +922,23 @@ function App() {
   };
 
   // STEP 2 — suggested plan
-  const [ppId, setPpId] = useState('pp_699');
+  const [ppId, setPpId] = useState('pp_449');
   const [wifiId, setWifiId] = useState('wifi_599');
 
   // ── AUTO-RECOMMEND ──────────────────────────────────────────────────
-  // Total mobile SIMs entered in Step 1 drives the recommendation.
+  // Total mobile SIMs drives the postpaid pick; current Wi-Fi spend sets the
+  // Wi-Fi tier — we recommend one tier below what they pay today (see
+  // recommendCheapest), so the suggestion is cheaper without being a deep cut.
   const profileSims = parseNum(bills.mobileAirtel.count) + parseNum(bills.mobileOthers.count);
-  const recommended = useMemo(() => recommendCheapest(profileSims), [profileSims]);
+  const currentWifiBase = parseNum(bills.wifiAirtel.count) * parseNum(bills.wifiAirtel.perMonth)
+                        + parseNum(bills.wifiOthers.count) * parseNum(bills.wifiOthers.perMonth);
+  const recommended = useMemo(() => recommendCheapest(profileSims, currentWifiBase), [profileSims, currentWifiBase]);
 
   // Auto-select the cheapest matching plan whenever the recommendation changes.
-  // Only a change in SIM count (which changes the recommendation) re-applies it —
-  // editing rupee amounts leaves a manual pick untouched. The rep can still
-  // override via the dropdowns below at any time.
+  // Only a change that moves the recommendation re-applies it (SIM count for
+  // postpaid, current Wi-Fi spend crossing a tier for Wi-Fi) — editing unrelated
+  // amounts leaves a manual pick untouched. The rep can still override via the
+  // dropdowns below at any time.
   useEffect(() => { if (recommended.ppId)   setPpId(recommended.ppId); },   [recommended.ppId]);
   useEffect(() => { if (recommended.wifiId) setWifiId(recommended.wifiId); }, [recommended.wifiId]);
 
@@ -1587,7 +1614,7 @@ function App() {
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-        One Airtel Plan · v9 
+        One Airtel Plan · v11 
       </footer>
 
     </div>
