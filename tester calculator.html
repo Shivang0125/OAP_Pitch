@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#BB0E1F">
-<title>One Airtel Calculator</title>
+<title>One Airtel Pitch</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -193,8 +192,7 @@ window.tailwind.config = {
   .stepper-ctrl input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
-  }
-  @media (max-width: 640px) {
+  }  @media (max-width: 640px) {
     .conn-header { grid-template-columns: 60px 1fr 1fr 80px; gap: 6px; padding: 8px 10px; font-size: 9px; }
     .conn-header .header-cat-cell { display: none; }
   }
@@ -479,7 +477,7 @@ const POSTPAID_PLANS = [
   { id: 'pp_999',  base: 999,  sims: 3, label: 'Family of 3',     subEn: '3 SIMs', subHi: '3 SIM' },
   { id: 'pp_1199', base: 1199, sims: 4, label: 'Family of 4',     subEn: '4 SIMs', subHi: '4 SIM' },
   { id: 'pp_1399', base: 1399, sims: 5, label: 'Family of 5',     subEn: '5 SIMs', subHi: '5 SIM' },
-  { id: 'pp_1749', base: 1749, sims: 5, label: 'Premium 5 SIMs',  subEn: '5 SIMs · Netflix Standard', subHi: '5 SIM · Netflix Standard' },
+  { id: 'pp_1749', base: 1749, sims: 5, label: '5 SIMs',  subEn: '5 SIMs · Netflix Standard', subHi: '5 SIM · Netflix Standard' },
 ];
 
 // WiFi plans (base price before GST)
@@ -488,13 +486,24 @@ const WIFI_PLANS = [
   { id: 'wifi_599',  base: 599,  speedLabel: '30 Mbps'  },
   { id: 'wifi_799',  base: 799,  speedLabel: '100 Mbps' },
   { id: 'wifi_899',  base: 899,  speedLabel: '100 Mbps' },
-  { id: 'wifi_1199', base: 1199, speedLabel: '100 Mbps premium' },
+  { id: 'wifi_1199', base: 1199, speedLabel: '100 Mbps' },
   { id: 'wifi_1599', base: 1599, speedLabel: '300 Mbps' },
   { id: 'wifi_3999', base: 3999, speedLabel: '1 Gbps'   },
 ];
 
 // Wi-Fi plans that REPLACE customer's DTH / cable bill (all except 499 and 799)
 const WIFI_INCLUDES_DTH = new Set(['wifi_599', 'wifi_899', 'wifi_1199', 'wifi_1599', 'wifi_3999']);
+
+// ── AUTO-RECOMMEND CONFIG ─────────────────────────────────────────────
+// Plans the auto-recommender SKIPS when picking the cheapest combination.
+// (These can STILL be chosen manually from the dropdowns by the rep.)
+//   • wifi_499 — excluded per requirement.
+//   • pp_449   — the "Individual Lite" plan (Xstream-only, almost no OTT value).
+//                Excluded so a single-SIM profile auto-picks the ₹549 Individual
+//                plan (full benefits, better pitch). Remove 'pp_449' from this set
+//                if you'd rather have the ₹449 lite plan auto-selected.
+const AUTO_EXCLUDE_WIFI = new Set(['wifi_499']);
+const AUTO_EXCLUDE_PP   = new Set(['pp_449']);
 
 // OTT catalog (monthly value)
 const OTT = {
@@ -536,8 +545,8 @@ const POSTPAID_OTT = {
 
 const T = {
   en: {
-    header_title: 'One Airtel',
-    header_sub: 'Sales calculator',
+    header_title: 'One Airtel Plan',
+    header_sub: 'Sales Tool',
 
     step1_title: 'What does the customer pay today?',
     step1_hint: 'Enter what they currently pay every month, like in the pitchbook.',
@@ -558,7 +567,7 @@ const T = {
     gst_toggle_on: 'Amounts include 18% GST',
     gst_note: 'incl. GST',
 
-    step2_title: 'Suggest a One Airtel plan',
+    step2_title: 'Choose a One Airtel plan',
     step2_hint: 'Pick a postpaid family plan and a Wi-Fi plan. We add 18% GST and take ₹100 off.',
     postpaid_label: 'Postpaid plan',
     wifi_label: 'Wi-Fi plan',
@@ -586,12 +595,15 @@ const T = {
     screenshot_hint: 'Or just take a screenshot of this page — works the same.',
 
     // XFE phone + submission
-    xfe_section_label: 'Your details (customer will see this)',
+    xfe_section_label: 'Your details',
+    xfe_section_note: 'Only Name & phone shown to customer',
     xfe_name_label: 'Your name',
     xfe_name_placeholder: 'Full name',
     xfe_label: 'Your phone number',
     xfe_sublabel: '(customer will see this)',
     xfe_placeholder: '98xxxxxxxx',
+    olm_label: 'Your OLM ID',
+    olm_placeholder: 'OLM ID (e.g. A1XXXX)',
     xfe_saved: 'Saved',
     your_rep: 'Your Airtel rep',
     submit_btn: 'Submit pitch',
@@ -600,6 +612,12 @@ const T = {
     save_pdf_btn: 'Save as PDF',
     please_enter_phone: 'Please enter your phone number first.',
     please_enter_both: 'Please enter your name and phone number first.',
+    please_enter_all: 'Please enter your name, phone, and OLM ID first.',
+    followup_label: 'Follow-up Generated?',
+    followup_hint: 'Mandatory — pick one to submit',
+    followup_yes: 'Yes',
+    followup_no: 'No',
+    please_pick_followup: 'Please mark whether this is a follow-up has been generated.',
     submission_error: 'Could not submit. Check internet and try again, or take a screenshot.',
     lifetime: 'For lifetime',
     suffix_m: ' months',
@@ -640,7 +658,7 @@ const T = {
   },
   hi: {
     header_title: 'One Airtel',
-    header_sub: 'Sales calculator',
+    header_sub: 'Sales Tool',
 
     step1_title: 'Customer अभी क्या pay करते हैं?',
     step1_hint: 'जैसे pitchbook में, अभी का monthly खर्चा यहाँ भर दीजिए।',
@@ -661,7 +679,7 @@ const T = {
     gst_toggle_on: 'Amounts में 18% GST जोड़ा गया है',
     gst_note: 'GST सहित',
 
-    step2_title: 'One Airtel का plan suggest कीजिए',
+    step2_title: 'One Airtel का plan चुनिये',
     step2_hint: 'एक postpaid family plan और एक Wi-Fi plan चुनिए। 18% GST जुड़ता है, ₹100 छूट मिलती है।',
     postpaid_label: 'Postpaid plan',
     wifi_label: 'Wi-Fi plan',
@@ -689,12 +707,15 @@ const T = {
     screenshot_hint: 'या इस page का screenshot ले लीजिए — दोनों बराबर हैं।',
 
     // XFE phone + submission
-    xfe_section_label: 'आपकी details (customer को दिखेगी)',
+    xfe_section_label: 'आपकी details',
+    xfe_section_note: 'केवल नाम और phone customer को दिखेगा',
     xfe_name_label: 'आपका नाम',
     xfe_name_placeholder: 'पूरा नाम',
     xfe_label: 'आपका phone number',
     xfe_sublabel: '(customer को दिखेगा)',
     xfe_placeholder: '98xxxxxxxx',
+    olm_label: 'आपका OLM ID',
+    olm_placeholder: 'OLM ID (जैसे A1XXXX)',
     xfe_saved: 'Save हो गया',
     your_rep: 'आपके Airtel rep',
     submit_btn: 'Pitch submit करें',
@@ -703,6 +724,12 @@ const T = {
     save_pdf_btn: 'PDF Save करें',
     please_enter_phone: 'पहले अपना phone number डालिए।',
     please_enter_both: 'पहले अपना नाम और phone number डालिए।',
+    please_enter_all: 'पहले अपना नाम, phone और OLM ID डालिए।',
+    followup_label: 'Follow-up बना है?',
+    followup_hint: 'जरूरी — submit करने के लिए एक चुनिए',
+    followup_yes: 'हाँ',
+    followup_no: 'नहीं',
+    please_pick_followup: 'Follow-up बना है या नहीं, mark कीजिए।',
     submission_error: 'Submit नहीं हो पाया। Internet check करके फिर try करें, या screenshot लीजिए।',
     lifetime: 'हमेशा के लिए',
     suffix_m: ' महीने',
@@ -773,6 +800,25 @@ function buildOAP(wifiId, postpaidId) {
 }
 
 /* ============================================================
+   AUTO-RECOMMEND — cheapest OAP combo for the entered profile
+   ============================================================ */
+// Given the number of mobile SIMs in the customer profile, return the cheapest
+// postpaid plan that covers those SIMs + the cheapest Wi-Fi plan (both honouring
+// AUTO_EXCLUDE_* above). Wi-Fi has no SIM dependency, so it resolves to the
+// cheapest allowed plan (₹599, which already bundles DTH).
+function recommendCheapest(neededSims) {
+  const n = Math.max(1, Math.round(neededSims || 0));
+  const ppPool = POSTPAID_PLANS.filter(p => !AUTO_EXCLUDE_PP.has(p.id));
+  // cheapest plan that has enough SIMs; if none can cover it, fall back to the
+  // plan with the most SIMs available (cheapest among those).
+  const covering = ppPool.filter(p => p.sims >= n).sort((a, b) => a.base - b.base);
+  const fallback = [...ppPool].sort((a, b) => b.sims - a.sims || a.base - b.base);
+  const pp = covering[0] || fallback[0];
+  const wifi = WIFI_PLANS.filter(w => !AUTO_EXCLUDE_WIFI.has(w.id)).sort((a, b) => a.base - b.base)[0];
+  return { ppId: pp ? pp.id : null, wifiId: wifi ? wifi.id : null, neededSims: n };
+}
+
+/* ============================================================
    APP
    ============================================================ */
 
@@ -794,7 +840,7 @@ function App() {
     try { localStorage.setItem('oap_xfe_phone', xfePhone); } catch {}
   }, [xfePhone]);
 
-  // XFE Name — auto-saved, persists across sessions
+// XFE Name — auto-saved, persists across sessions
   const [xfeName, setXfeName] = useState(() => {
     try { return localStorage.getItem('oap_xfe_name') || ''; } catch { return ''; }
   });
@@ -802,9 +848,21 @@ function App() {
     try { localStorage.setItem('oap_xfe_name', xfeName); } catch {}
   }, [xfeName]);
 
+  // OLM ID — auto-saved. INTERNAL ONLY: never appears on customer-facing savings stamp / print / PDF.
+  const [olmId, setOlmId] = useState(() => {
+    try { return localStorage.getItem('oap_olm_id') || ''; } catch { return ''; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('oap_olm_id', olmId); } catch {}
+  }, [olmId]);
+  
   // Submission state
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Follow-up flag — per-pitch (resets with Reset). Mandatory; null until picked.
+  // Not persisted across sessions and never shown to customer / in print.
+  const [followUp, setFollowUp] = useState(null);
 
   // STEP 1 inputs — current bills (gst: per-row GST toggle)
   // NOTE: `perMonth` is the per-SIM (per-connection) cost. Row total = count × perMonth.
@@ -845,6 +903,18 @@ function App() {
   const [ppId, setPpId] = useState('pp_699');
   const [wifiId, setWifiId] = useState('wifi_599');
 
+  // ── AUTO-RECOMMEND ──────────────────────────────────────────────────
+  // Total mobile SIMs entered in Step 1 drives the recommendation.
+  const profileSims = parseNum(bills.mobileAirtel.count) + parseNum(bills.mobileOthers.count);
+  const recommended = useMemo(() => recommendCheapest(profileSims), [profileSims]);
+
+  // Auto-select the cheapest matching plan whenever the recommendation changes.
+  // Only a change in SIM count (which changes the recommendation) re-applies it —
+  // editing rupee amounts leaves a manual pick untouched. The rep can still
+  // override via the dropdowns below at any time.
+  useEffect(() => { if (recommended.ppId)   setPpId(recommended.ppId); },   [recommended.ppId]);
+  useEffect(() => { if (recommended.wifiId) setWifiId(recommended.wifiId); }, [recommended.wifiId]);
+
   // OTT toggles — disabledMap[ottId] = true means this OTT is unchecked
   const [ottDisabled, setOttDisabled] = useState({});
 
@@ -871,7 +941,8 @@ function App() {
          + parseNum(bills.entertainment);
   }, [bills]);
 
-  // TV total — used in savings calc; absorbed into OAP when wifi plan includes DTH
+  // TV total — kept around for potential messaging; NOT added to newMonthly.
+  // (See savings-calc note below — the customer drops their old DTH bill in ALL cases.)
   const tvTotal = useMemo(() => {
     const rt = (row) => {
       const base = parseNum(row.count) * parseNum(row.perMonth);
@@ -899,13 +970,14 @@ function App() {
   }, [oap]);
 
   // Savings calc:
-  // - If the chosen Wi-Fi plan includes DTH, customer's TV bill goes to zero → it's absorbed
-  //   into the bundle, so we drop it from `newMonthly`.
-  // - If the chosen Wi-Fi plan does NOT include DTH (wifi_499, wifi_799), customer still
-  //   pays their TV bill separately on top of the OAP bundle.
-  const newMonthly = oap
-    ? oap.price + (wifiIncludesDTH ? 0 : tvTotal)
-    : 0;
+  // One Airtel consolidates the customer onto a single Airtel bill. Their old TV / DTH
+  // bill goes away in BOTH cases:
+  //   - DTH-inclusive Wi-Fi plan (599/899/1199/1599/3999): DTH is bundled into the plan.
+  //   - Non-DTH plan (499, 799): customer is dropping DTH entirely (e.g. moved to a
+  //     smart TV, won't use DTH anymore — otherwise the rep would pick a DTH plan).
+  // Either way, newMonthly is just the OAP price. The customer's old TV bill isn't
+  // carried forward — it's part of the "current spend" that the OAP bundle replaces.
+  const newMonthly = oap ? oap.price : 0;
   const monthlySavings = currentMonthly - newMonthly;
   const yearlySavings = monthlySavings * 12;
   const isPositive = monthlySavings >= 0;
@@ -920,9 +992,10 @@ function App() {
       wifiOthers:     { count: '', perMonth: '', gst: false },
       tvAirtel:       { count: '', perMonth: '', gst: false },
       tvOthers:       { count: '', perMonth: '', gst: false },
-      entertainment:  '',
+     entertainment:  '',
     });
     setSubmitted(false);
+    setFollowUp(null);
   };
 
   // Build a readable breakdown of customer's current bills
@@ -944,11 +1017,16 @@ function App() {
   };
 
   // Submit pitch data to Google Sheet
-  const submitToSheet = async () => {
+ const submitToSheet = async () => {
     const phone = xfePhone.trim();
     const name = xfeName.trim();
-    if (!phone || !name) {
-      alert(t('please_enter_both'));
+    const olm = olmId.trim().toUpperCase();
+    if (!phone || !name || !olm) {
+      alert(t('please_enter_all'));
+      return;
+    }
+    if (followUp !== 'Yes' && followUp !== 'No') {
+      alert(t('please_pick_followup'));
       return;
     }
     setSubmitting(true);
@@ -958,6 +1036,7 @@ function App() {
       const payload = {
         xfeName: name,
         xfePhone: phone,
+        olmId: olm,                              // primary identifier for dashboard mapping
         customerCurrentMonthly: buildBillBreakdown(),
         postpaidPlan: ppPlan ? `₹${ppPlan.base} ${ppPlan.label} (${ppPlan.sims} SIM${ppPlan.sims>1?'s':''})` : '',
         wifiPlan: wifiPlan ? `₹${wifiPlan.base} ${wifiPlan.speedLabel}${wifiIncludesDTH ? ' +DTH' : ''}` : '',
@@ -966,6 +1045,7 @@ function App() {
         monthlySavings: Math.round(monthlySavings),
         yearlySavings: Math.round(yearlySavings),
         ottValue: Math.round(oapBenefitsValue),
+        followUp: followUp,                          // 'Yes' or 'No'
       };
 
       // Use no-cors mode since Apps Script returns opaque response from cross-origin
@@ -1006,16 +1086,19 @@ function App() {
         </div>
       </header>
 
-      {/* XFE NAME + PHONE STRIP — auto-saved, visible to customer in savings stamp */}
+    {/* XFE NAME + PHONE + OLM ID STRIP — auto-saved.
+          Name & phone appear on the customer-facing savings stamp.
+          OLM ID is internal (used for dashboard mapping) — NEVER shown to customer or in print. */}
       <div className="bg-cream2 border-b border-ink/10 no-print">
         <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
             <div className="text-[11px] mono uppercase tracking-wider text-warmgray font-semibold">{t('xfe_section_label')}</div>
-            {xfeName.trim() && xfePhone.trim() && (
+            {xfeName.trim() && xfePhone.trim() && olmId.trim() && (
               <span className="text-[11px] text-sage font-semibold mono">✓ {t('xfe_saved')}</span>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="text-[10px] text-warmgray italic mb-2">{t('xfe_section_note')}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input
               type="text"
               placeholder={t('xfe_name_placeholder')}
@@ -1032,6 +1115,14 @@ function App() {
               onChange={e => setXfePhone(e.target.value)}
               className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white tabular text-base font-semibold focus:border-airtelDeep focus:outline-none"
               style={{minHeight:'40px'}}
+            />
+            <input
+              type="text"
+              placeholder={t('olm_placeholder')}
+              value={olmId}
+              onChange={e => setOlmId(e.target.value.toUpperCase())}
+              className="w-full px-3 py-2 border-2 border-ink/15 rounded-md bg-white tabular text-base font-semibold focus:border-airtelDeep focus:outline-none"
+              style={{minHeight:'40px', textTransform:'uppercase'}}
             />
           </div>
         </div>
@@ -1143,6 +1234,20 @@ function App() {
               ))}
             </select>
             <div className="text-[11px] text-warmgray mt-1.5">{POSTPAID_PLANS.find(p=>p.id===ppId)?.[lang==='hi'?'subHi':'subEn']}</div>
+            {recommended.ppId && (ppId === recommended.ppId ? (
+              <div className="text-[11px] text-sage mt-1 font-semibold">
+                ✓ {lang==='hi'
+                    ? `${recommended.neededSims} SIM के लिए सबसे सस्ता plan`
+                    : `Cheapest for ${recommended.neededSims} SIM${recommended.neededSims>1?'s':''}`}
+              </div>
+            ) : (
+              <div className="text-[11px] text-warmgray mt-1">
+                {lang==='hi' ? 'सुझाव' : 'Recommended'}: ₹{POSTPAID_PLANS.find(p=>p.id===recommended.ppId)?.base} {POSTPAID_PLANS.find(p=>p.id===recommended.ppId)?.label}{' '}
+                <button type="button" onClick={() => setPpId(recommended.ppId)} className="text-airtelDeep font-semibold underline">
+                  {lang==='hi' ? 'चुनें' : 'Use'}
+                </button>
+              </div>
+            ))}
           </div>
 
           <div>
@@ -1160,6 +1265,14 @@ function App() {
             </select>
             {wifiIncludesDTH && (
               <div className="text-[11px] text-sage mt-1.5 font-semibold">✓ {t('wifi_dth_included')}</div>
+            )}
+            {recommended.wifiId && wifiId !== recommended.wifiId && (
+              <div className="text-[11px] text-warmgray mt-1">
+                {lang==='hi' ? 'सुझाव' : 'Recommended'}: ₹{WIFI_PLANS.find(w=>w.id===recommended.wifiId)?.base} {WIFI_PLANS.find(w=>w.id===recommended.wifiId)?.speedLabel}{' '}
+                <button type="button" onClick={() => setWifiId(recommended.wifiId)} className="text-airtelDeep font-semibold underline">
+                  {lang==='hi' ? 'चुनें' : 'Use'}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -1391,13 +1504,47 @@ function App() {
           </div>
         )}
 
-        {/* Actions */}
+       {/* Actions */}
         {!submitted ? (
           <>
-            <div className="mt-8 flex flex-wrap gap-3 no-print">
+            {/* Follow-up toggle — mandatory before submission. Internal data point, never shown to customer. */}
+            <div className="mt-8 no-print">
+              <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                <span className="text-[12px] mono uppercase tracking-wider text-warmgray font-semibold">{t('followup_label')}</span>
+                <span className="text-[10px] text-warmgray italic">{t('followup_hint')}</span>
+              </div>
+              <div className="inline-flex rounded-md overflow-hidden border-2 border-ink/15" style={{background:'white'}}>
+                <button
+                  type="button"
+                  onClick={() => setFollowUp('Yes')}
+                  className="px-5 py-2 text-sm font-semibold transition"
+                  style={{
+                    background: followUp === 'Yes' ? '#BB0E1F' : 'white',
+                    color: followUp === 'Yes' ? '#FAF6EE' : '#1A1714',
+                    minWidth: '72px',
+                  }}
+                >
+                  {t('followup_yes')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFollowUp('No')}
+                  className="px-5 py-2 text-sm font-semibold transition border-l-2 border-ink/15"
+                  style={{
+                    background: followUp === 'No' ? '#1A1714' : 'white',
+                    color: followUp === 'No' ? '#FAF6EE' : '#1A1714',
+                    minWidth: '72px',
+                  }}
+                >
+                  {t('followup_no')}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3 no-print">
               <button
                 onClick={submitToSheet}
-                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim()}
+                disabled={submitting || !hasInputs || !xfePhone.trim() || !xfeName.trim() || !olmId.trim() || (followUp !== 'Yes' && followUp !== 'No')}
                 className="px-5 py-3 bg-airtelDeep text-cream rounded-md font-semibold text-sm hover:bg-airtel transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting ? (
@@ -1440,7 +1587,7 @@ function App() {
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-        One Airtel · v5 · per-SIM × count · DTH-aware · GST inclusive
+        One Airtel Plan · v9 
       </footer>
 
     </div>
