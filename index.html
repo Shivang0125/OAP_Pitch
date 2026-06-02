@@ -494,6 +494,17 @@ const WIFI_PLANS = [
 // Wi-Fi plans that REPLACE customer's DTH / cable bill (all except 499 and 799)
 const WIFI_INCLUDES_DTH = new Set(['wifi_599', 'wifi_899', 'wifi_1199', 'wifi_1599', 'wifi_3999']);
 
+// ── AUTO-RECOMMEND CONFIG ─────────────────────────────────────────────
+// Plans the auto-recommender SKIPS when picking the cheapest combination.
+// (These can STILL be chosen manually from the dropdowns by the rep.)
+//   • wifi_499 — excluded per requirement.
+//   • pp_449   — the "Individual Lite" plan (Xstream-only, almost no OTT value).
+//                Excluded so a single-SIM profile auto-picks the ₹549 Individual
+//                plan (full benefits, better pitch). Remove 'pp_449' from this set
+//                if you'd rather have the ₹449 lite plan auto-selected.
+const AUTO_EXCLUDE_WIFI = new Set(['wifi_499']);
+const AUTO_EXCLUDE_PP   = new Set(['pp_449']);
+
 // OTT catalog (monthly value)
 const OTT = {
   jiohotstar_super: { name: 'JioHotstar Super', value: 149 },
@@ -789,6 +800,25 @@ function buildOAP(wifiId, postpaidId) {
 }
 
 /* ============================================================
+   AUTO-RECOMMEND — cheapest OAP combo for the entered profile
+   ============================================================ */
+// Given the number of mobile SIMs in the customer profile, return the cheapest
+// postpaid plan that covers those SIMs + the cheapest Wi-Fi plan (both honouring
+// AUTO_EXCLUDE_* above). Wi-Fi has no SIM dependency, so it resolves to the
+// cheapest allowed plan (₹599, which already bundles DTH).
+function recommendCheapest(neededSims) {
+  const n = Math.max(1, Math.round(neededSims || 0));
+  const ppPool = POSTPAID_PLANS.filter(p => !AUTO_EXCLUDE_PP.has(p.id));
+  // cheapest plan that has enough SIMs; if none can cover it, fall back to the
+  // plan with the most SIMs available (cheapest among those).
+  const covering = ppPool.filter(p => p.sims >= n).sort((a, b) => a.base - b.base);
+  const fallback = [...ppPool].sort((a, b) => b.sims - a.sims || a.base - b.base);
+  const pp = covering[0] || fallback[0];
+  const wifi = WIFI_PLANS.filter(w => !AUTO_EXCLUDE_WIFI.has(w.id)).sort((a, b) => a.base - b.base)[0];
+  return { ppId: pp ? pp.id : null, wifiId: wifi ? wifi.id : null, neededSims: n };
+}
+
+/* ============================================================
    APP
    ============================================================ */
 
@@ -872,6 +902,18 @@ function App() {
   // STEP 2 — suggested plan
   const [ppId, setPpId] = useState('pp_699');
   const [wifiId, setWifiId] = useState('wifi_599');
+
+  // ── AUTO-RECOMMEND ──────────────────────────────────────────────────
+  // Total mobile SIMs entered in Step 1 drives the recommendation.
+  const profileSims = parseNum(bills.mobileAirtel.count) + parseNum(bills.mobileOthers.count);
+  const recommended = useMemo(() => recommendCheapest(profileSims), [profileSims]);
+
+  // Auto-select the cheapest matching plan whenever the recommendation changes.
+  // Only a change in SIM count (which changes the recommendation) re-applies it —
+  // editing rupee amounts leaves a manual pick untouched. The rep can still
+  // override via the dropdowns below at any time.
+  useEffect(() => { if (recommended.ppId)   setPpId(recommended.ppId); },   [recommended.ppId]);
+  useEffect(() => { if (recommended.wifiId) setWifiId(recommended.wifiId); }, [recommended.wifiId]);
 
   // OTT toggles — disabledMap[ottId] = true means this OTT is unchecked
   const [ottDisabled, setOttDisabled] = useState({});
@@ -1192,6 +1234,20 @@ function App() {
               ))}
             </select>
             <div className="text-[11px] text-warmgray mt-1.5">{POSTPAID_PLANS.find(p=>p.id===ppId)?.[lang==='hi'?'subHi':'subEn']}</div>
+            {recommended.ppId && (ppId === recommended.ppId ? (
+              <div className="text-[11px] text-sage mt-1 font-semibold">
+                ✓ {lang==='hi'
+                    ? `${recommended.neededSims} SIM के लिए सबसे सस्ता plan`
+                    : `Cheapest for ${recommended.neededSims} SIM${recommended.neededSims>1?'s':''}`}
+              </div>
+            ) : (
+              <div className="text-[11px] text-warmgray mt-1">
+                {lang==='hi' ? 'सुझाव' : 'Recommended'}: ₹{POSTPAID_PLANS.find(p=>p.id===recommended.ppId)?.base} {POSTPAID_PLANS.find(p=>p.id===recommended.ppId)?.label}{' '}
+                <button type="button" onClick={() => setPpId(recommended.ppId)} className="text-airtelDeep font-semibold underline">
+                  {lang==='hi' ? 'चुनें' : 'Use'}
+                </button>
+              </div>
+            ))}
           </div>
 
           <div>
@@ -1209,6 +1265,14 @@ function App() {
             </select>
             {wifiIncludesDTH && (
               <div className="text-[11px] text-sage mt-1.5 font-semibold">✓ {t('wifi_dth_included')}</div>
+            )}
+            {recommended.wifiId && wifiId !== recommended.wifiId && (
+              <div className="text-[11px] text-warmgray mt-1">
+                {lang==='hi' ? 'सुझाव' : 'Recommended'}: ₹{WIFI_PLANS.find(w=>w.id===recommended.wifiId)?.base} {WIFI_PLANS.find(w=>w.id===recommended.wifiId)?.speedLabel}{' '}
+                <button type="button" onClick={() => setWifiId(recommended.wifiId)} className="text-airtelDeep font-semibold underline">
+                  {lang==='hi' ? 'चुनें' : 'Use'}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -1523,7 +1587,7 @@ function App() {
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-        One Airtel Plan · v8 
+        One Airtel Plan · v9 
       </footer>
 
     </div>
