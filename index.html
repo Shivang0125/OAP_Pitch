@@ -805,16 +805,23 @@ function buildOAP(wifiId, postpaidId) {
    AUTO-RECOMMEND — cheapest OAP combo for the entered profile
    ============================================================ */
 // Given the customer's mobile-SIM count and current Wi-Fi base spend, return the
-// cheapest postpaid plan that covers those SIMs + a cheaper Wi-Fi plan that sits
-// one tier below the customer's current Wi-Fi spend (honouring AUTO_EXCLUDE_* and
-// the ₹499 ceiling rule).
+// cheapest postpaid plan that covers those SIMs + a Wi-Fi plan chosen from the
+// customer's current Wi-Fi (and DTH) spend, honouring AUTO_EXCLUDE_*, the ₹499
+// ceiling rule, and DTH continuity.
 //
-// Wi-Fi: plan price is the proxy for tier. We suggest the most expensive plan that
-// is still strictly cheaper than what the customer pays today — i.e. one step down,
-// not a deep cut. A customer on ~₹899 is shown ₹799 (not ₹599). The ₹499 plan is
-// only offered when the customer's current Wi-Fi bill is below WIFI_499_BILL_CEILING.
-// A customer with no Wi-Fi today gets the cheapest non-₹499 plan, ₹599 (bundles DTH).
-function recommendCheapest(neededSims, currentWifiBase) {
+// Wi-Fi (no DTH today): plan price is the proxy for tier. We suggest the dearest
+// plan still strictly cheaper than what they pay — one step down, not a deep cut
+// (₹899 → ₹799, not ₹599). ₹499 is only offered when the current Wi-Fi bill is
+// below WIFI_499_BILL_CEILING. No Wi-Fi today → cheapest non-₹499 plan, ₹599.
+//
+// Wi-Fi (customer ALSO has DTH): we must not strip their DTH, so we only pick from
+// DTH-inclusive plans. To avoid dropping their Wi-Fi speed, we keep them on the
+// same Wi-Fi tier and fold DTH in — i.e. the cheapest DTH-inclusive plan priced at
+// or above their current Wi-Fi spend. Their separate DTH bill gets absorbed, so the
+// plan is still cheaper than their combined Wi-Fi + DTH outlay (₹899 Wi-Fi + ₹350
+// DTH → the ₹899 plan, same speed, DTH included). If that would cost more than the
+// combined bill (tiny DTH edge case), we step down to the dearest DTH plan below it.
+function recommendCheapest(neededSims, currentWifiBase, currentTvBase) {
   const n = Math.max(1, Math.round(neededSims || 0));
   const ppPool = POSTPAID_PLANS.filter(p => !AUTO_EXCLUDE_PP.has(p.id));
   // cheapest plan that has enough SIMs; if none can cover it, fall back to the
@@ -823,19 +830,36 @@ function recommendCheapest(neededSims, currentWifiBase) {
   const fallback = [...ppPool].sort((a, b) => b.sims - a.sims || a.base - b.base);
   const pp = covering[0] || fallback[0];
 
-  // Wi-Fi tier ladder (cheapest → dearest), gated by the exclude set and the
-  // ₹499 rule: ₹499 is in play only when the customer has a sub-ceiling bill.
-  const floor   = Math.max(0, currentWifiBase || 0);
-  const allow499 = floor > 0 && floor < WIFI_499_BILL_CEILING;
-  const wifiPool = WIFI_PLANS
-    .filter(w => !AUTO_EXCLUDE_WIFI.has(w.id))
-    .filter(w => w.id === 'wifi_499' ? allow499 : true)
-    .sort((a, b) => a.base - b.base);
-  // one tier down = the dearest plan priced strictly below their current spend;
-  // if nothing sits below (no Wi-Fi today, or spend under the cheapest plan),
-  // fall back to the cheapest plan in the allowed pool.
-  const below = wifiPool.filter(w => w.base < floor);
-  const wifi  = below.length ? below[below.length - 1] : wifiPool[0];
+  const wifiFloor = Math.max(0, currentWifiBase || 0);
+  const dthSpend  = Math.max(0, currentTvBase || 0);
+  const hasDTH    = dthSpend > 0;
+
+  let wifi;
+  if (hasDTH) {
+    // Only DTH-inclusive plans are eligible (never strip the customer's DTH).
+    const dthPool  = WIFI_PLANS
+      .filter(w => !AUTO_EXCLUDE_WIFI.has(w.id) && WIFI_INCLUDES_DTH.has(w.id))
+      .sort((a, b) => a.base - b.base);
+    const combined = wifiFloor + dthSpend;            // their Wi-Fi + DTH outlay
+    const match    = dthPool.find(w => w.base >= wifiFloor); // keep Wi-Fi speed tier
+    if (match && match.base < combined) {
+      wifi = match;                                   // fold DTH in, no speed drop
+    } else {
+      // tiny-DTH edge: keeping the tier costs more than they pay now — guarantee a
+      // saving by stepping to the dearest DTH plan still below the combined bill.
+      const below = dthPool.filter(w => w.base < combined);
+      wifi = below.length ? below[below.length - 1] : (match || dthPool[0]);
+    }
+  } else {
+    // Wi-Fi only: one tier down, with the ₹499 plan gated by the bill ceiling.
+    const allow499 = wifiFloor > 0 && wifiFloor < WIFI_499_BILL_CEILING;
+    const wifiPool = WIFI_PLANS
+      .filter(w => !AUTO_EXCLUDE_WIFI.has(w.id))
+      .filter(w => w.id === 'wifi_499' ? allow499 : true)
+      .sort((a, b) => a.base - b.base);
+    const below = wifiPool.filter(w => w.base < wifiFloor);
+    wifi = below.length ? below[below.length - 1] : wifiPool[0];
+  }
 
   return { ppId: pp ? pp.id : null, wifiId: wifi ? wifi.id : null, neededSims: n };
 }
@@ -926,19 +950,25 @@ function App() {
   const [wifiId, setWifiId] = useState('wifi_599');
 
   // ── AUTO-RECOMMEND ──────────────────────────────────────────────────
-  // Total mobile SIMs drives the postpaid pick; current Wi-Fi spend sets the
-  // Wi-Fi tier — we recommend one tier below what they pay today (see
-  // recommendCheapest), so the suggestion is cheaper without being a deep cut.
+  // Total mobile SIMs drives the postpaid pick. Current Wi-Fi spend sets the
+  // Wi-Fi tier (one tier below what they pay). If the customer also has DTH, the
+  // suggestion switches to a DTH-inclusive plan so their TV service isn't dropped
+  // (see recommendCheapest).
   const profileSims = parseNum(bills.mobileAirtel.count) + parseNum(bills.mobileOthers.count);
   const currentWifiBase = parseNum(bills.wifiAirtel.count) * parseNum(bills.wifiAirtel.perMonth)
                         + parseNum(bills.wifiOthers.count) * parseNum(bills.wifiOthers.perMonth);
-  const recommended = useMemo(() => recommendCheapest(profileSims, currentWifiBase), [profileSims, currentWifiBase]);
+  const currentTvBase   = parseNum(bills.tvAirtel.count) * parseNum(bills.tvAirtel.perMonth)
+                        + parseNum(bills.tvOthers.count) * parseNum(bills.tvOthers.perMonth);
+  const recommended = useMemo(
+    () => recommendCheapest(profileSims, currentWifiBase, currentTvBase),
+    [profileSims, currentWifiBase, currentTvBase]
+  );
 
   // Auto-select the cheapest matching plan whenever the recommendation changes.
   // Only a change that moves the recommendation re-applies it (SIM count for
-  // postpaid, current Wi-Fi spend crossing a tier for Wi-Fi) — editing unrelated
-  // amounts leaves a manual pick untouched. The rep can still override via the
-  // dropdowns below at any time.
+  // postpaid; current Wi-Fi/DTH spend crossing a tier for Wi-Fi) — editing
+  // unrelated amounts leaves a manual pick untouched. The rep can still override
+  // via the dropdowns below at any time.
   useEffect(() => { if (recommended.ppId)   setPpId(recommended.ppId); },   [recommended.ppId]);
   useEffect(() => { if (recommended.wifiId) setWifiId(recommended.wifiId); }, [recommended.wifiId]);
 
@@ -1614,7 +1644,7 @@ function App() {
       </section>
 
       <footer className="max-w-4xl mx-auto px-4 mt-12 pt-6 border-t border-ink/10 text-[11px] text-warmgray mono uppercase tracking-wider no-print">
-        One Airtel Plan · v11 
+        One Airtel Plan · v12 
       </footer>
 
     </div>
